@@ -64,7 +64,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       {/* Sidebar - Desktop */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen bg-sidebar transition-all duration-300 hidden md:block",
+          "fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 hidden md:block",
           isSidebarOpen ? "w-64" : "w-20"
         )}
       >

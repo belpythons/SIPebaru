@@ -73,24 +73,46 @@ const Setup = () => {
         },
       });
 
+      // If user already exists, try to sign in instead
+      if (authError?.message === "User already registered") {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          throw new Error("Email sudah terdaftar. Gunakan password yang benar atau email lain.");
+        }
+
+        if (signInData.user) {
+          // Use the security definer function to setup admin
+          const { error: setupError } = await supabase.rpc("setup_first_admin", {
+            _user_id: signInData.user.id,
+            _username: username,
+          });
+
+          if (setupError) throw setupError;
+
+          toast({
+            title: "Berhasil!",
+            description: "Akun admin berhasil dibuat.",
+          });
+
+          navigate("/admin");
+          return;
+        }
+      }
+
       if (authError) throw authError;
 
       if (authData.user) {
-        // Create profile
-        const { error: profileError } = await supabase.from("profiles").insert({
-          user_id: authData.user.id,
-          username,
+        // Use the security definer function to setup admin
+        const { error: setupError } = await supabase.rpc("setup_first_admin", {
+          _user_id: authData.user.id,
+          _username: username,
         });
 
-        if (profileError) throw profileError;
-
-        // Assign admin role
-        const { error: roleError } = await supabase.from("user_roles").insert({
-          user_id: authData.user.id,
-          role: "admin",
-        });
-
-        if (roleError) throw roleError;
+        if (setupError) throw setupError;
 
         toast({
           title: "Berhasil!",

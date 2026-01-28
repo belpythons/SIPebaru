@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, FileDown, Search } from "lucide-react";
+import { Loader2, FileDown, Search, FileText } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Clock, Loader2 as ProcessingIcon, CheckCircle } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Complaint {
   id: string;
@@ -25,8 +27,11 @@ interface Complaint {
   reporter_name: string;
   department: string;
   item_name: string;
+  quantity: number;
+  description: string | null;
   status: "pending" | "processing" | "completed";
   reported_at: string;
+  processed_at: string | null;
 }
 
 const statusLabels = {
@@ -108,18 +113,59 @@ const Reports = () => {
     });
   };
 
+  const formatDateFull = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   const downloadCSV = () => {
-    const headers = ["No. Pengaduan", "Tanggal", "Nama Pelapor", "Departemen", "Nama Barang", "Status"];
-    const rows = filteredComplaints.map((c) => [
+    // BOM for UTF-8
+    const BOM = "\uFEFF";
+    
+    const headers = [
+      "No",
+      "No. Pengaduan",
+      "Tanggal Lapor",
+      "Tanggal Selesai",
+      "Nama Pelapor",
+      "Departemen",
+      "Nama Barang",
+      "Jumlah",
+      "Keterangan",
+      "Status"
+    ];
+    
+    const rows = filteredComplaints.map((c, index) => [
+      index + 1,
       c.ticket_number,
       formatDate(c.reported_at),
+      c.processed_at ? formatDate(c.processed_at) : "-",
       c.reporter_name,
       c.department,
       c.item_name,
+      c.quantity,
+      c.description || "-",
       statusLabels[c.status],
     ]);
 
-    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    // Create CSV with proper escaping
+    const csvContent = BOM + [
+      headers.join(";"),
+      ...rows.map((row) => 
+        row.map(cell => {
+          const cellStr = String(cell);
+          // Escape quotes and wrap in quotes if contains special chars
+          if (cellStr.includes(";") || cellStr.includes('"') || cellStr.includes("\n")) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        }).join(";")
+      )
+    ].join("\n");
+
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -128,7 +174,109 @@ const Reports = () => {
 
     toast({
       title: "Download berhasil",
-      description: "File CSV berhasil diunduh",
+      description: "File Excel (CSV) berhasil diunduh",
+    });
+  };
+
+  const downloadPDF = () => {
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
+
+    // Title
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("LAPORAN PENGADUAN BARANG", doc.internal.pageSize.width / 2, 15, { align: "center" });
+
+    // Period
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Periode: ${formatDateFull(dateRange.from)} - ${formatDateFull(dateRange.to)}`,
+      doc.internal.pageSize.width / 2,
+      22,
+      { align: "center" }
+    );
+
+    // Summary stats
+    doc.setFontSize(9);
+    const statsText = `Total: ${filteredComplaints.length} | Belum Diproses: ${stats.pending} | Sedang Diproses: ${stats.processing} | Selesai: ${stats.completed}`;
+    doc.text(statsText, doc.internal.pageSize.width / 2, 28, { align: "center" });
+
+    // Table
+    const tableData = filteredComplaints.map((c, index) => [
+      index + 1,
+      c.ticket_number,
+      formatDate(c.reported_at),
+      c.processed_at ? formatDate(c.processed_at) : "-",
+      c.reporter_name,
+      c.department,
+      c.item_name,
+      c.quantity,
+      statusLabels[c.status],
+    ]);
+
+    autoTable(doc, {
+      startY: 33,
+      head: [[
+        "No",
+        "No. Pengaduan",
+        "Tgl Lapor",
+        "Tgl Selesai",
+        "Nama Pelapor",
+        "Departemen",
+        "Nama Barang",
+        "Jml",
+        "Status",
+      ]],
+      body: tableData,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [41, 65, 148],
+        textColor: 255,
+        fontStyle: "bold",
+        halign: "center",
+      },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 10 },
+        1: { cellWidth: 30 },
+        2: { halign: "center", cellWidth: 22 },
+        3: { halign: "center", cellWidth: 22 },
+        4: { cellWidth: 35 },
+        5: { cellWidth: 30 },
+        6: { cellWidth: 40 },
+        7: { halign: "center", cellWidth: 12 },
+        8: { halign: "center", cellWidth: 28 },
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+    });
+
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.text(
+        `Dicetak pada: ${new Date().toLocaleString("id-ID")} | Halaman ${i} dari ${pageCount}`,
+        doc.internal.pageSize.width / 2,
+        doc.internal.pageSize.height - 10,
+        { align: "center" }
+      );
+    }
+
+    doc.save(`laporan-pengaduan-${dateRange.from}-${dateRange.to}.pdf`);
+
+    toast({
+      title: "Download berhasil",
+      description: "File PDF berhasil diunduh",
     });
   };
 
@@ -184,6 +332,10 @@ const Reports = () => {
                 <FileDown className="h-4 w-4" />
                 Download Excel
               </Button>
+              <Button variant="outline" onClick={downloadPDF} className="gap-2">
+                <FileText className="h-4 w-4" />
+                Download PDF
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -222,31 +374,39 @@ const Reports = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">No</TableHead>
                     <TableHead>No. Pengaduan</TableHead>
-                    <TableHead>Tanggal</TableHead>
+                    <TableHead>Tanggal Lapor</TableHead>
+                    <TableHead>Tanggal Selesai</TableHead>
                     <TableHead>Nama Pelapor</TableHead>
                     <TableHead>Departemen</TableHead>
                     <TableHead>Nama Barang</TableHead>
+                    <TableHead className="text-center">Jumlah</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredComplaints.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         Tidak ada data dalam rentang tanggal ini
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredComplaints.map((complaint) => (
+                    filteredComplaints.map((complaint, index) => (
                       <TableRow key={complaint.id}>
+                        <TableCell className="text-center">{index + 1}</TableCell>
                         <TableCell className="font-medium">
                           {complaint.ticket_number}
                         </TableCell>
                         <TableCell>{formatDate(complaint.reported_at)}</TableCell>
+                        <TableCell>
+                          {complaint.processed_at ? formatDate(complaint.processed_at) : "-"}
+                        </TableCell>
                         <TableCell>{complaint.reporter_name}</TableCell>
                         <TableCell>{complaint.department}</TableCell>
                         <TableCell>{complaint.item_name}</TableCell>
+                        <TableCell className="text-center">{complaint.quantity}</TableCell>
                         <TableCell>
                           <Badge variant={statusVariants[complaint.status]}>
                             {statusLabels[complaint.status]}

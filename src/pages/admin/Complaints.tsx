@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Edit } from "lucide-react";
+import { Loader2, Edit, Search } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -46,6 +47,7 @@ const Complaints = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"pending" | "processing" | "completed">("pending");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchComplaints();
@@ -76,7 +78,18 @@ const Complaints = () => {
     });
   };
 
-  const filteredComplaints = complaints.filter((c) => c.status === activeTab);
+  const filteredComplaints = complaints
+    .filter((c) => c.status === activeTab)
+    .filter((c) => {
+      if (!searchQuery.trim()) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        c.ticket_number.toLowerCase().includes(query) ||
+        c.reporter_name.toLowerCase().includes(query) ||
+        c.department.toLowerCase().includes(query) ||
+        c.item_name.toLowerCase().includes(query)
+      );
+    });
 
   const ComplaintsTable = ({ data }: { data: Complaint[] }) => (
     <Table>
@@ -97,7 +110,7 @@ const Complaints = () => {
         {data.length === 0 ? (
           <TableRow>
             <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-              Tidak ada data
+              {searchQuery ? "Tidak ada data yang cocok" : "Tidak ada data"}
             </TableCell>
           </TableRow>
         ) : (
@@ -148,7 +161,18 @@ const Complaints = () => {
   return (
     <AdminLayout>
       <div className="space-y-6 animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground">Data Pengaduan</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold text-foreground">Data Pengaduan</h1>
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari no. pengaduan, nama, departemen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
 
         <Card className="shadow-card">
           <CardHeader className="pb-0">

@@ -77,15 +77,15 @@ const Departments = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
-      toast.success("Unit kerja berhasil ditambahkan");
+      toast.success("Departemen berhasil ditambahkan");
       setIsAddDialogOpen(false);
       setNewDepartmentName("");
     },
     onError: (error: any) => {
       if (error.message?.includes("duplicate")) {
-        toast.error("Unit kerja dengan nama tersebut sudah ada");
+        toast.error("Departemen dengan nama tersebut sudah ada");
       } else {
-        toast.error("Gagal menambahkan unit kerja");
+        toast.error("Gagal menambahkan departemen");
       }
     },
   });
@@ -102,16 +102,16 @@ const Departments = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
-      toast.success("Unit kerja berhasil diperbarui");
+      toast.success("Departemen berhasil diperbarui");
       setIsEditDialogOpen(false);
       setDepartmentToEdit(null);
       setEditDepartmentName("");
     },
     onError: (error: any) => {
       if (error.message?.includes("duplicate")) {
-        toast.error("Unit kerja dengan nama tersebut sudah ada");
+        toast.error("Departemen dengan nama tersebut sudah ada");
       } else {
-        toast.error("Gagal memperbarui unit kerja");
+        toast.error("Gagal memperbarui departemen");
       }
     },
   });
@@ -128,18 +128,18 @@ const Departments = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
-      toast.success("Unit kerja berhasil dihapus");
+      toast.success("Departemen berhasil dihapus");
       setDeleteDialogOpen(false);
       setDepartmentToDelete(null);
     },
     onError: () => {
-      toast.error("Gagal menghapus unit kerja");
+      toast.error("Gagal menghapus departemen");
     },
   });
 
   const handleAddDepartment = () => {
     if (!newDepartmentName.trim()) {
-      toast.error("Nama unit kerja tidak boleh kosong");
+      toast.error("Nama departemen tidak boleh kosong");
       return;
     }
     addMutation.mutate(newDepartmentName);
@@ -158,7 +158,7 @@ const Departments = () => {
 
   const handleEditDepartment = () => {
     if (!editDepartmentName.trim()) {
-      toast.error("Nama unit kerja tidak boleh kosong");
+      toast.error("Nama departemen tidak boleh kosong");
       return;
     }
     if (departmentToEdit) {
@@ -178,21 +178,21 @@ const Departments = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Data Unit Kerja</h1>
+            <h1 className="text-2xl font-bold text-foreground">Data Departemen</h1>
             <p className="text-muted-foreground">
-              Kelola daftar unit kerja/departemen
+              Kelola daftar departemen
             </p>
           </div>
           <Button onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Tambah Unit Kerja
+            Tambah Departemen
           </Button>
         </div>
 
         {/* Stats Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Unit Kerja</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Departemen</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -207,7 +207,7 @@ const Departments = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">No</TableHead>
-                  <TableHead>Nama Unit Kerja</TableHead>
+                  <TableHead>Nama Departemen</TableHead>
                   <TableHead>Tanggal Dibuat</TableHead>
                   <TableHead className="w-24 text-center">Aksi</TableHead>
                 </TableRow>
@@ -222,7 +222,7 @@ const Departments = () => {
                 ) : departments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                      Belum ada data unit kerja
+                      Belum ada data departemen
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -268,11 +268,11 @@ const Departments = () => {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Tambah Unit Kerja Baru</DialogTitle>
+            <DialogTitle>Tambah Departemen Baru</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Input
-              placeholder="Nama unit kerja"
+              placeholder="Nama departemen"
               value={newDepartmentName}
               onChange={(e) => setNewDepartmentName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddDepartment()}
@@ -293,11 +293,11 @@ const Departments = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Unit Kerja</DialogTitle>
+            <DialogTitle>Edit Departemen</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Input
-              placeholder="Nama unit kerja"
+              placeholder="Nama departemen"
               value={editDepartmentName}
               onChange={(e) => setEditDepartmentName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleEditDepartment()}
@@ -318,9 +318,9 @@ const Departments = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Unit Kerja?</AlertDialogTitle>
+            <AlertDialogTitle>Hapus Departemen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus unit kerja "{departmentToDelete?.name}"? 
+              Apakah Anda yakin ingin menghapus departemen "{departmentToDelete?.name}"? 
               Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Plus, CalendarIcon } from "lucide-react";
@@ -74,18 +75,23 @@ interface AddComplaintDialogProps {
   onSuccess: () => void;
 }
 
-const departments = [
-  "IT",
-  "HR",
-  "Finance",
-  "Marketing",
-  "Operasional",
-  "Adkor",
-];
-
 const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch departments from database
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -186,8 +192,8 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
                     </FormControl>
                     <SelectContent>
                       {departments.map((dept) => (
-                        <SelectItem key={dept} value={dept}>
-                          {dept}
+                        <SelectItem key={dept.id} value={dept.name}>
+                          {dept.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

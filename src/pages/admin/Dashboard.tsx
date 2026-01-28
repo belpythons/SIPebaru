@@ -3,6 +3,7 @@ import { FileText, Clock, Loader2, CheckCircle, Users } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import StatCard from "@/components/StatCard";
 import ComplaintTrendsChart from "@/components/ComplaintTrendsChart";
+import ComplaintBarChart from "@/components/ComplaintBarChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -147,8 +148,11 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Complaint Trends Chart */}
-        <ComplaintTrendsChart />
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ComplaintTrendsChart />
+          <ComplaintBarChart />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Reports */}

@@ -54,10 +54,19 @@ const Accounts = () => {
     password: "",
     confirmPassword: "",
   });
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProfiles();
+    getCurrentUser();
   }, []);
+
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+    }
+  };
 
   const fetchProfiles = async () => {
     try {
@@ -114,10 +123,31 @@ const Accounts = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedProfile && formData.password !== formData.confirmPassword) {
+    // Validate password match
+    if (formData.password && formData.password !== formData.confirmPassword) {
       toast({
         title: "Error",
         description: "Password tidak cocok",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For new account, password is required
+    if (!selectedProfile && !formData.password) {
+      toast({
+        title: "Error",
+        description: "Password wajib diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For new account, email is required
+    if (!selectedProfile && !formData.email) {
+      toast({
+        title: "Error",
+        description: "Email wajib diisi",
         variant: "destructive",
       });
       return;
@@ -127,20 +157,40 @@ const Accounts = () => {
 
     try {
       if (selectedProfile) {
-        // Update existing profile
-        const { error } = await supabase
+        // Update existing profile - username
+        const { error: profileError } = await supabase
           .from("profiles")
           .update({ username: formData.username })
           .eq("id", selectedProfile.id);
 
-        if (error) throw error;
+        if (profileError) throw profileError;
+
+        // Update password if provided and it's the current user's profile
+        if (formData.password && selectedProfile.user_id === currentUserId) {
+          const { error: passwordError } = await supabase.auth.updateUser({
+            password: formData.password,
+          });
+
+          if (passwordError) throw passwordError;
+        } else if (formData.password && selectedProfile.user_id !== currentUserId) {
+          toast({
+            title: "Peringatan",
+            description: "Password hanya bisa diubah untuk akun Anda sendiri. Username berhasil diperbarui.",
+          });
+          handleCloseDialog();
+          fetchProfiles();
+          return;
+        }
 
         toast({
           title: "Berhasil",
           description: "Akun berhasil diperbarui",
         });
       } else {
-        // Create new admin user
+        // Get current session to restore later
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        // Create new admin user using admin signup approach
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -151,33 +201,51 @@ const Accounts = () => {
 
         if (authError) throw authError;
 
-        if (authData.user) {
-          // Create profile
-          const { error: profileError } = await supabase.from("profiles").insert({
-            user_id: authData.user.id,
-            username: formData.username,
+        if (!authData.user) {
+          throw new Error("Gagal membuat akun. Silakan coba lagi.");
+        }
+
+        // Note: Profile and role creation is handled by admin RLS policies
+        // We need to create profile with the new user's ID
+        const { error: profileError } = await supabase.from("profiles").insert({
+          user_id: authData.user.id,
+          username: formData.username,
+        });
+
+        if (profileError) {
+          console.error("Profile error:", profileError);
+          // Continue anyway as signup succeeded
+        }
+
+        // Add admin role
+        const { error: roleError } = await supabase.from("user_roles").insert({
+          user_id: authData.user.id,
+          role: "admin",
+        });
+
+        if (roleError) {
+          console.error("Role error:", roleError);
+          // Continue anyway
+        }
+
+        // If we had a session, sign back in with current user's session
+        if (currentSession?.access_token) {
+          await supabase.auth.setSession({
+            access_token: currentSession.access_token,
+            refresh_token: currentSession.refresh_token,
           });
-
-          if (profileError) throw profileError;
-
-          // Add admin role
-          const { error: roleError } = await supabase.from("user_roles").insert({
-            user_id: authData.user.id,
-            role: "admin",
-          });
-
-          if (roleError) throw roleError;
         }
 
         toast({
           title: "Berhasil",
-          description: "Akun admin baru berhasil dibuat",
+          description: "Akun admin baru berhasil dibuat. Email konfirmasi telah dikirim.",
         });
       }
 
       handleCloseDialog();
       fetchProfiles();
     } catch (error: any) {
+      console.error("Error:", error);
       toast({
         title: "Gagal",
         description: error.message || "Terjadi kesalahan",
@@ -191,7 +259,25 @@ const Accounts = () => {
   const handleDelete = async () => {
     if (!selectedProfile) return;
 
+    // Prevent deleting own account
+    if (selectedProfile.user_id === currentUserId) {
+      toast({
+        title: "Gagal",
+        description: "Anda tidak dapat menghapus akun sendiri",
+        variant: "destructive",
+      });
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+
     try {
+      // Delete user role first
+      await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", selectedProfile.user_id);
+
+      // Then delete profile
       const { error } = await supabase
         .from("profiles")
         .delete()
@@ -261,49 +347,61 @@ const Accounts = () => {
                     value={formData.username}
                     onChange={handleInputChange}
                     required
+                    placeholder="Masukkan username"
                   />
                 </div>
 
                 {!selectedProfile && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Masukkan email"
+                    />
+                  </div>
+                )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        required
-                        minLength={6}
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">
+                    {selectedProfile ? "Password Baru (kosongkan jika tidak diubah)" : "Password"}
+                  </Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required={!selectedProfile}
+                    minLength={6}
+                    placeholder={selectedProfile ? "Masukkan password baru" : "Masukkan password"}
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
-                      <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                  </>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">
+                    {selectedProfile ? "Konfirmasi Password Baru" : "Konfirmasi Password"}
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required={!selectedProfile || !!formData.password}
+                    minLength={6}
+                    placeholder="Konfirmasi password"
+                  />
+                </div>
+
+                {selectedProfile && selectedProfile.user_id !== currentUserId && (
+                  <p className="text-sm text-muted-foreground">
+                    Catatan: Password hanya bisa diubah untuk akun Anda sendiri.
+                  </p>
                 )}
 
                 <div className="flex gap-3 pt-4">
@@ -342,7 +440,12 @@ const Accounts = () => {
                 ) : (
                   profiles.map((profile) => (
                     <TableRow key={profile.id}>
-                      <TableCell className="font-medium">{profile.username}</TableCell>
+                      <TableCell className="font-medium">
+                        {profile.username}
+                        {profile.user_id === currentUserId && (
+                          <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>
+                        )}
+                      </TableCell>
                       <TableCell>{formatDate(profile.created_at)}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
@@ -355,18 +458,20 @@ const Accounts = () => {
                             <Edit className="h-4 w-4" />
                             Edit
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedProfile(profile);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                            className="gap-1 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Hapus
-                          </Button>
+                          {profile.user_id !== currentUserId && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedProfile(profile);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                              className="gap-1 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Hapus
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

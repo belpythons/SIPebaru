@@ -187,58 +187,32 @@ const Accounts = () => {
           description: "Akun berhasil diperbarui",
         });
       } else {
-        // Get current session to restore later
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        // Create new admin using edge function
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // Create new admin user using admin signup approach
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: window.location.origin,
+        if (!session?.access_token) {
+          throw new Error("Sesi tidak valid. Silakan login ulang.");
+        }
+
+        const response = await supabase.functions.invoke("create-admin", {
+          body: {
+            email: formData.email,
+            password: formData.password,
+            username: formData.username,
           },
         });
 
-        if (authError) throw authError;
-
-        if (!authData.user) {
-          throw new Error("Gagal membuat akun. Silakan coba lagi.");
+        if (response.error) {
+          throw new Error(response.error.message || "Gagal membuat akun admin");
         }
 
-        // Note: Profile and role creation is handled by admin RLS policies
-        // We need to create profile with the new user's ID
-        const { error: profileError } = await supabase.from("profiles").insert({
-          user_id: authData.user.id,
-          username: formData.username,
-        });
-
-        if (profileError) {
-          console.error("Profile error:", profileError);
-          // Continue anyway as signup succeeded
-        }
-
-        // Add admin role
-        const { error: roleError } = await supabase.from("user_roles").insert({
-          user_id: authData.user.id,
-          role: "admin",
-        });
-
-        if (roleError) {
-          console.error("Role error:", roleError);
-          // Continue anyway
-        }
-
-        // If we had a session, sign back in with current user's session
-        if (currentSession?.access_token) {
-          await supabase.auth.setSession({
-            access_token: currentSession.access_token,
-            refresh_token: currentSession.refresh_token,
-          });
+        if (response.data?.error) {
+          throw new Error(response.data.error);
         }
 
         toast({
           title: "Berhasil",
-          description: "Akun admin baru berhasil dibuat. Email konfirmasi telah dikirim.",
+          description: "Akun admin baru berhasil dibuat",
         });
       }
 

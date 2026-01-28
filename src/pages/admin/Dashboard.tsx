@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FileText, Clock, Loader2, CheckCircle, Users } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import StatCard from "@/components/StatCard";
+import ComplaintTrendsChart from "@/components/ComplaintTrendsChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -145,6 +146,9 @@ const Dashboard = () => {
             variant="success"
           />
         </div>
+
+        {/* Complaint Trends Chart */}
+        <ComplaintTrendsChart />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Reports */}

@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { FileText, Send, RotateCcw, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +26,20 @@ const Home = () => {
     item_name: "",
     quantity: 1,
     description: "",
+  });
+
+  // Fetch departments from database
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
   });
 
   const today = new Date().toLocaleDateString("id-ID", {
@@ -33,6 +55,13 @@ const Home = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: name === "quantity" ? parseInt(value) || 1 : value,
+    }));
+  };
+
+  const handleDepartmentChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      department: value,
     }));
   };
 
@@ -163,14 +192,18 @@ const Home = () => {
                 <Label htmlFor="department">
                   Departemen <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  id="department"
-                  name="department"
-                  placeholder="Masukkan nama departemen"
-                  value={formData.department}
-                  onChange={handleInputChange}
-                  required
-                />
+                <Select value={formData.department} onValueChange={handleDepartmentChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih departemen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.name}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Nama Barang */}

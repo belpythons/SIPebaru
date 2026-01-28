@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, Save, ArrowLeft } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +54,20 @@ const EditComplaint = () => {
     fetchComplaint();
   }, [id]);
 
+  // Fetch departments from database
+  const { data: departmentsList = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const fetchComplaint = async () => {
     try {
       const { data, error } = await supabase
@@ -98,6 +113,13 @@ const EditComplaint = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: name === "quantity" ? parseInt(value) || 1 : value,
+    }));
+  };
+
+  const handleDepartmentChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      department: value,
     }));
   };
 
@@ -222,13 +244,18 @@ const EditComplaint = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="department">Departemen</Label>
-                <Input
-                  id="department"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleInputChange}
-                  required
-                />
+                <Select value={formData.department} onValueChange={handleDepartmentChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih departemen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departmentsList.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.name}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

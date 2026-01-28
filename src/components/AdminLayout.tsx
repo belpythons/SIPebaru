@@ -21,7 +21,7 @@ interface AdminLayoutProps {
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
   { icon: FileText, label: "Data Pengaduan", path: "/admin/complaints" },
-  { icon: Building2, label: "Unit Kerja", path: "/admin/departments" },
+  { icon: Building2, label: "Departemen", path: "/admin/departments" },
   { icon: BarChart3, label: "Laporan", path: "/admin/reports" },
   { icon: Users, label: "Pengaturan Akun", path: "/admin/accounts" },
 ];

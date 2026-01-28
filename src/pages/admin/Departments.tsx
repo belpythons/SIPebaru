@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Building2 } from "lucide-react";
+import { Plus, Trash2, Building2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -45,9 +45,12 @@ interface Department {
 const Departments = () => {
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null);
+  const [departmentToEdit, setDepartmentToEdit] = useState<Department | null>(null);
   const [newDepartmentName, setNewDepartmentName] = useState("");
+  const [editDepartmentName, setEditDepartmentName] = useState("");
 
   // Fetch departments
   const { data: departments = [], isLoading } = useQuery({
@@ -87,6 +90,32 @@ const Departments = () => {
     },
   });
 
+  // Edit department mutation
+  const editMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { error } = await supabase
+        .from("departments")
+        .update({ name: name.trim() })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      toast.success("Unit kerja berhasil diperbarui");
+      setIsEditDialogOpen(false);
+      setDepartmentToEdit(null);
+      setEditDepartmentName("");
+    },
+    onError: (error: any) => {
+      if (error.message?.includes("duplicate")) {
+        toast.error("Unit kerja dengan nama tersebut sudah ada");
+      } else {
+        toast.error("Gagal memperbarui unit kerja");
+      }
+    },
+  });
+
   // Delete department mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -119,6 +148,22 @@ const Departments = () => {
   const handleDeleteClick = (dept: Department) => {
     setDepartmentToDelete(dept);
     setDeleteDialogOpen(true);
+  };
+
+  const handleEditClick = (dept: Department) => {
+    setDepartmentToEdit(dept);
+    setEditDepartmentName(dept.name);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditDepartment = () => {
+    if (!editDepartmentName.trim()) {
+      toast.error("Nama unit kerja tidak boleh kosong");
+      return;
+    }
+    if (departmentToEdit) {
+      editMutation.mutate({ id: departmentToEdit.id, name: editDepartmentName });
+    }
   };
 
   const confirmDelete = () => {
@@ -191,14 +236,24 @@ const Departments = () => {
                         })}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDeleteClick(dept)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => handleEditClick(dept)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteClick(dept)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -229,6 +284,31 @@ const Departments = () => {
             </Button>
             <Button onClick={handleAddDepartment} disabled={addMutation.isPending}>
               {addMutation.isPending ? "Menyimpan..." : "Simpan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Unit Kerja</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Nama unit kerja"
+              value={editDepartmentName}
+              onChange={(e) => setEditDepartmentName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleEditDepartment()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleEditDepartment} disabled={editMutation.isPending}>
+              {editMutation.isPending ? "Menyimpan..." : "Simpan"}
             </Button>
           </DialogFooter>
         </DialogContent>

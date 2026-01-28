@@ -26,6 +26,7 @@ interface Complaint {
   description: string | null;
   status: "pending" | "processing" | "completed";
   reported_at: string;
+  processed_at: string | null;
 }
 
 const statusLabels = {
@@ -82,7 +83,8 @@ const Complaints = () => {
       <TableHeader>
         <TableRow>
           <TableHead>No. Pengaduan</TableHead>
-          <TableHead>Tanggal</TableHead>
+          <TableHead>Tanggal Lapor</TableHead>
+          <TableHead>Tanggal Selesai</TableHead>
           <TableHead>Nama Pelapor</TableHead>
           <TableHead>Departemen</TableHead>
           <TableHead>Nama Barang</TableHead>
@@ -94,7 +96,7 @@ const Complaints = () => {
       <TableBody>
         {data.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
               Tidak ada data
             </TableCell>
           </TableRow>
@@ -103,6 +105,9 @@ const Complaints = () => {
             <TableRow key={complaint.id}>
               <TableCell className="font-medium">{complaint.ticket_number}</TableCell>
               <TableCell>{formatDate(complaint.reported_at)}</TableCell>
+              <TableCell>
+                {complaint.processed_at ? formatDate(complaint.processed_at) : "-"}
+              </TableCell>
               <TableCell>{complaint.reporter_name}</TableCell>
               <TableCell>{complaint.department}</TableCell>
               <TableCell>{complaint.item_name}</TableCell>

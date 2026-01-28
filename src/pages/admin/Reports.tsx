@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, FileDown, Search, FileText } from "lucide-react";
+import { Loader2, FileDown, Search, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,11 +46,14 @@ const statusVariants = {
   completed: "secondary",
 } as const;
 
+const ITEMS_PER_PAGE = 10;
+
 const Reports = () => {
   const { toast } = useToast();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState({
     from: new Date(new Date().setDate(1)).toISOString().split("T")[0],
     to: new Date().toISOString().split("T")[0],
@@ -94,11 +97,53 @@ const Reports = () => {
     });
 
     setFilteredComplaints(filtered);
+    setCurrentPage(1); // Reset to first page on filter
     setStats({
       pending: filtered.filter((c) => c.status === "pending").length,
       processing: filtered.filter((c) => c.status === "processing").length,
       completed: filtered.filter((c) => c.status === "completed").length,
     });
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredComplaints.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedComplaints = filteredComplaints.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
   };
 
   const handleFilter = () => {
@@ -386,16 +431,16 @@ const Reports = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredComplaints.length === 0 ? (
+                  {paginatedComplaints.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         Tidak ada data dalam rentang tanggal ini
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredComplaints.map((complaint, index) => (
+                    paginatedComplaints.map((complaint, index) => (
                       <TableRow key={complaint.id}>
-                        <TableCell className="text-center">{index + 1}</TableCell>
+                        <TableCell className="text-center">{startIndex + index + 1}</TableCell>
                         <TableCell className="font-medium">
                           {complaint.ticket_number}
                         </TableCell>
@@ -418,6 +463,58 @@ const Reports = () => {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredComplaints.length)} dari {filteredComplaints.length} data
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Sebelumnya
+                  </Button>
+                  
+                  <div className="flex items-center gap-1 mx-2">
+                    {getPageNumbers().map((page, index) => (
+                      typeof page === "number" ? (
+                        <Button
+                          key={index}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => goToPage(page)}
+                          className="min-w-[2.5rem]"
+                        >
+                          {page}
+                        </Button>
+                      ) : (
+                        <span key={index} className="px-2 text-muted-foreground">
+                          {page}
+                        </span>
+                      )
+                    ))}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="gap-1"
+                  >
+                    Selanjutnya
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -165,21 +165,31 @@ const Accounts = () => {
 
         if (profileError) throw profileError;
 
-        // Update password if provided and it's the current user's profile
-        if (formData.password && selectedProfile.user_id === currentUserId) {
-          const { error: passwordError } = await supabase.auth.updateUser({
-            password: formData.password,
-          });
+        // Update password if provided
+        if (formData.password) {
+          if (selectedProfile.user_id === currentUserId) {
+            // Update own password using client auth
+            const { error: passwordError } = await supabase.auth.updateUser({
+              password: formData.password,
+            });
+            if (passwordError) throw passwordError;
+          } else {
+            // Update other admin's password using edge function
+            const response = await supabase.functions.invoke("update-admin-password", {
+              body: {
+                target_user_id: selectedProfile.user_id,
+                password: formData.password,
+              },
+            });
 
-          if (passwordError) throw passwordError;
-        } else if (formData.password && selectedProfile.user_id !== currentUserId) {
-          toast({
-            title: "Peringatan",
-            description: "Password hanya bisa diubah untuk akun Anda sendiri. Username berhasil diperbarui.",
-          });
-          handleCloseDialog();
-          fetchProfiles();
-          return;
+            if (response.error) {
+              throw new Error(response.error.message || "Gagal mengubah password");
+            }
+
+            if (response.data?.error) {
+              throw new Error(response.data.error);
+            }
+          }
         }
 
         toast({
@@ -372,11 +382,6 @@ const Accounts = () => {
                   />
                 </div>
 
-                {selectedProfile && selectedProfile.user_id !== currentUserId && (
-                  <p className="text-sm text-muted-foreground">
-                    Catatan: Password hanya bisa diubah untuk akun Anda sendiri.
-                  </p>
-                )}
 
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" disabled={isSaving}>

@@ -4,6 +4,7 @@ import AdminLayout from "@/components/AdminLayout";
 import StatCard from "@/components/StatCard";
 import ComplaintTrendsChart from "@/components/ComplaintTrendsChart";
 import ComplaintBarChart from "@/components/ComplaintBarChart";
+import MonthlyStatsTable from "@/components/MonthlyStatsTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -153,6 +154,9 @@ const Dashboard = () => {
           <ComplaintTrendsChart />
           <ComplaintBarChart />
         </div>
+
+        {/* Monthly Statistics Table */}
+        <MonthlyStatsTable />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Reports */}

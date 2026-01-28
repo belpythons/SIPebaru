@@ -127,7 +127,13 @@ const Login = () => {
                 {isLoading ? "Memproses..." : "Login"}
               </Button>
 
-              <div className="text-center">
+              <div className="text-center space-y-2">
+                <Link
+                  to="/setup"
+                  className="text-sm text-primary hover:underline block"
+                >
+                  Belum ada akun admin? Buat akun pertama
+                </Link>
                 <Link
                   to="/"
                   className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1"

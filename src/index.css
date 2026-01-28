@@ -53,14 +53,14 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    /* Sidebar */
-    --sidebar-background: 204 47% 11%;
-    --sidebar-foreground: 200 14% 96%;
+    /* Sidebar - Light Blue */
+    --sidebar-background: 204 70% 95%;
+    --sidebar-foreground: 204 47% 20%;
     --sidebar-primary: 204 82% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 204 47% 20%;
-    --sidebar-accent-foreground: 200 14% 96%;
-    --sidebar-border: 204 47% 20%;
+    --sidebar-accent: 204 60% 88%;
+    --sidebar-accent-foreground: 204 47% 20%;
+    --sidebar-border: 204 40% 85%;
     --sidebar-ring: 204 82% 39%;
   }
 

@@ -9,10 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ShieldCheck } from "lucide-react";
 
 const Setup = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("admin@gmail.com");
+  const [password, setPassword] = useState("admin12345");
+  const [confirmPassword, setConfirmPassword] = useState("admin12345");
+  const [username, setUsername] = useState("admin");
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [hasAdmin, setHasAdmin] = useState(false);

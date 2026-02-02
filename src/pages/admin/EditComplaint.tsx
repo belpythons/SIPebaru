@@ -50,7 +50,6 @@ const EditComplaint = () => {
   const [formData, setFormData] = useState({
     reporter_name: "",
     department: "",
-    kompartemen: "",
     item_name: "",
     quantity: 1,
     description: "",
@@ -100,7 +99,6 @@ const EditComplaint = () => {
       setFormData({
         reporter_name: data.reporter_name,
         department: data.department,
-        kompartemen: data.kompartemen || "",
         item_name: data.item_name,
         quantity: data.quantity,
         description: data.description || "",
@@ -220,7 +218,6 @@ const EditComplaint = () => {
         .update({
           reporter_name: formData.reporter_name,
           department: formData.department,
-          kompartemen: formData.kompartemen || null,
           item_name: formData.item_name,
           quantity: formData.quantity,
           description: formData.description || null,
@@ -335,25 +332,6 @@ const EditComplaint = () => {
                 <Select value={formData.department} onValueChange={handleDepartmentChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih departemen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departmentsList.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.name}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="kompartemen">Kompartemen</Label>
-                <Select 
-                  value={formData.kompartemen} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, kompartemen: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih kompartemen (opsional)" />
                   </SelectTrigger>
                   <SelectContent>
                     {departmentsList.map((dept) => (

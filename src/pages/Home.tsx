@@ -122,7 +122,7 @@ const Home = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 mb-3 sm:mb-4">
               <Package className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent pb-1">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent pb-2">
               Selamat Datang di SIPebaru
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground font-medium px-2">

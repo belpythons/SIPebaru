@@ -137,7 +137,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </aside>
 
         {/* Mobile Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-sidebar/95 backdrop-blur-xl p-4 md:hidden flex items-center justify-between border-b border-sidebar-border">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-sidebar p-4 md:hidden flex items-center justify-between border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
               <Package className="h-4 w-4" />
@@ -154,7 +154,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-40 bg-sidebar/98 backdrop-blur-xl pt-16 md:hidden">
+          <div className="fixed inset-0 z-40 bg-sidebar pt-16 md:hidden">
             <nav className="p-4 space-y-2">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;

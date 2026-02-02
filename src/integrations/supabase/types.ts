@@ -17,6 +17,7 @@ export type Database = {
       complaints: {
         Row: {
           admin_note: string | null
+          completed_at: string | null
           created_at: string
           department: string
           description: string | null
@@ -34,6 +35,7 @@ export type Database = {
         }
         Insert: {
           admin_note?: string | null
+          completed_at?: string | null
           created_at?: string
           department: string
           description?: string | null
@@ -51,6 +53,7 @@ export type Database = {
         }
         Update: {
           admin_note?: string | null
+          completed_at?: string | null
           created_at?: string
           department?: string
           description?: string | null

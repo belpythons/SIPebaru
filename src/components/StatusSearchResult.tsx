@@ -1,7 +1,7 @@
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Building2, Calendar, FileText } from "lucide-react";
+import { Package, Building2, Calendar, FileText, Clock, CheckCircle } from "lucide-react";
 
 interface Complaint {
   ticket_number: string;
@@ -10,6 +10,8 @@ interface Complaint {
   kompartemen: string | null;
   status: "pending" | "processing" | "completed";
   reported_at: string;
+  processed_at?: string | null;
+  completed_at?: string | null;
   description: string | null;
 }
 
@@ -33,6 +35,14 @@ const statusConfig = {
     color: "bg-green-100 text-green-800 border-green-300",
     progress: 100,
   },
+};
+
+const formatDate = (dateStr: string) => {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 };
 
 export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
@@ -68,18 +78,35 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-            <div>
-              <p className="text-sm text-muted-foreground">Tanggal Lapor</p>
-              <p className="font-medium">
-                {new Date(complaint.reported_at).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
+          {/* Timeline Dates */}
+          <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-4 w-4 text-yellow-600" />
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground">Tanggal Lapor</p>
+                <p className="text-sm font-medium">{formatDate(complaint.reported_at)}</p>
+              </div>
             </div>
+            
+            {complaint.processed_at && (
+              <div className="flex items-center gap-3">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Tanggal Diproses</p>
+                  <p className="text-sm font-medium">{formatDate(complaint.processed_at)}</p>
+                </div>
+              </div>
+            )}
+            
+            {complaint.completed_at && (
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Tanggal Selesai</p>
+                  <p className="text-sm font-medium">{formatDate(complaint.completed_at)}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {complaint.description && (

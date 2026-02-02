@@ -32,6 +32,7 @@ interface Complaint {
   admin_note: string | null;
   reported_at: string;
   processed_at: string | null;
+  completed_at: string | null;
 }
 
 const EditComplaint = () => {
@@ -51,6 +52,7 @@ const EditComplaint = () => {
     status: "pending" as "pending" | "processing" | "completed",
     admin_note: "",
     processed_at: "",
+    completed_at: "",
   });
 
   useEffect(() => {
@@ -101,7 +103,10 @@ const EditComplaint = () => {
         admin_note: data.admin_note || "",
         processed_at: data.processed_at
           ? new Date(data.processed_at).toISOString().split("T")[0]
-          : new Date().toISOString().split("T")[0],
+          : "",
+        completed_at: data.completed_at
+          ? new Date(data.completed_at).toISOString().split("T")[0]
+          : "",
       });
     } catch (error) {
       console.error("Error fetching complaint:", error);
@@ -151,8 +156,12 @@ const EditComplaint = () => {
           status: formData.status,
           admin_note: formData.admin_note || null,
           processed_at:
-            formData.status !== "pending"
+            formData.status !== "pending" && formData.processed_at
               ? new Date(formData.processed_at).toISOString()
+              : null,
+          completed_at:
+            formData.status === "completed" && formData.completed_at
+              ? new Date(formData.completed_at).toISOString()
               : null,
         })
         .eq("id", id);
@@ -334,6 +343,20 @@ const EditComplaint = () => {
 
               <h3 className="font-semibold text-foreground">Proses Admin</h3>
 
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status} onValueChange={handleStatusChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="pending">Belum Diproses</SelectItem>
+                    <SelectItem value="processing">Sedang Diproses</SelectItem>
+                    <SelectItem value="completed">Selesai Diproses</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="processed_at">Tanggal Diproses</Label>
@@ -343,20 +366,25 @@ const EditComplaint = () => {
                     type="date"
                     value={formData.processed_at}
                     onChange={handleInputChange}
+                    disabled={formData.status === "pending"}
                   />
+                  {formData.status === "pending" && (
+                    <p className="text-xs text-muted-foreground">Ubah status ke "Sedang Diproses" untuk mengisi tanggal</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={handleStatusChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover">
-                      <SelectItem value="pending">Belum Diproses</SelectItem>
-                      <SelectItem value="processing">Sedang Diproses</SelectItem>
-                      <SelectItem value="completed">Selesai Diproses</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="completed_at">Tanggal Selesai</Label>
+                  <Input
+                    id="completed_at"
+                    name="completed_at"
+                    type="date"
+                    value={formData.completed_at}
+                    onChange={handleInputChange}
+                    disabled={formData.status !== "completed"}
+                  />
+                  {formData.status !== "completed" && (
+                    <p className="text-xs text-muted-foreground">Ubah status ke "Selesai" untuk mengisi tanggal</p>
+                  )}
                 </div>
               </div>
 

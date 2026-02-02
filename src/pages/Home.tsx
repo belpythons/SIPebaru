@@ -71,7 +71,7 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/20 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-primary/10 via-primary/5 to-white flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container max-w-6xl mx-auto px-4 sm:px-6">

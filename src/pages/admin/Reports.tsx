@@ -346,7 +346,7 @@ const Reports = () => {
             <CardTitle className="text-lg">Filter Laporan</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-4 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3 lg:gap-4 lg:items-end">
               <div className="space-y-2">
                 <Label htmlFor="from">Dari Tanggal</Label>
                 <Input
@@ -369,18 +369,20 @@ const Reports = () => {
                   }
                 />
               </div>
-              <Button onClick={handleFilter} className="gap-2">
-                <Search className="h-4 w-4" />
-                Tampilkan Laporan
-              </Button>
-              <Button variant="outline" onClick={downloadCSV} className="gap-2">
-                <FileDown className="h-4 w-4" />
-                Download Excel
-              </Button>
-              <Button variant="outline" onClick={downloadPDF} className="gap-2">
-                <FileText className="h-4 w-4" />
-                Download PDF
-              </Button>
+              <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-wrap gap-2">
+                <Button onClick={handleFilter} className="gap-2 flex-1 sm:flex-none">
+                  <Search className="h-4 w-4" />
+                  <span className="hidden sm:inline">Tampilkan</span> Laporan
+                </Button>
+                <Button variant="outline" onClick={downloadCSV} className="gap-2 flex-1 sm:flex-none">
+                  <FileDown className="h-4 w-4" />
+                  <span className="hidden sm:inline">Download</span> Excel
+                </Button>
+                <Button variant="outline" onClick={downloadPDF} className="gap-2 flex-1 sm:flex-none">
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Download</span> PDF
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -415,7 +417,8 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -464,25 +467,72 @@ const Reports = () => {
               </Table>
             </div>
 
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-3">
+              {paginatedComplaints.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  Tidak ada data dalam rentang tanggal ini
+                </p>
+              ) : (
+                paginatedComplaints.map((complaint, index) => (
+                  <div key={complaint.id} className="p-4 border rounded-lg space-y-3 bg-card">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">#{startIndex + index + 1}</span>
+                      <Badge variant={statusVariants[complaint.status]}>
+                        {statusLabels[complaint.status]}
+                      </Badge>
+                    </div>
+                    <div className="font-semibold text-primary">{complaint.ticket_number}</div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Pelapor</p>
+                        <p className="font-medium truncate">{complaint.reporter_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Departemen</p>
+                        <p className="font-medium truncate">{complaint.department}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Barang</p>
+                        <p className="font-medium truncate">{complaint.item_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Jumlah</p>
+                        <p className="font-medium">{complaint.quantity}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Tgl Lapor</p>
+                        <p className="font-medium">{formatDate(complaint.reported_at)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Tgl Selesai</p>
+                        <p className="font-medium">{complaint.processed_at ? formatDate(complaint.processed_at) : "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground text-center sm:text-left">
                   Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredComplaints.length)} dari {filteredComplaints.length} data
                 </p>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 sm:gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="gap-1"
+                    className="gap-1 px-2 sm:px-3"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Sebelumnya
+                    <span className="hidden sm:inline">Sebelumnya</span>
                   </Button>
                   
-                  <div className="flex items-center gap-1 mx-2">
+                  <div className="hidden sm:flex items-center gap-1 mx-2">
                     {getPageNumbers().map((page, index) => (
                       typeof page === "number" ? (
                         <Button
@@ -501,15 +551,19 @@ const Reports = () => {
                       )
                     ))}
                   </div>
+                  
+                  <span className="sm:hidden text-sm text-muted-foreground">
+                    {currentPage}/{totalPages}
+                  </span>
 
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => goToPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="gap-1"
+                    className="gap-1 px-2 sm:px-3"
                   >
-                    Selanjutnya
+                    <span className="hidden sm:inline">Selanjutnya</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>

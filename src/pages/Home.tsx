@@ -73,47 +73,48 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/20">
       {/* Header */}
-      <header className="p-4 flex justify-end">
-        <Button variant="outline" onClick={() => navigate("/login")} className="gap-2">
+      <header className="p-3 sm:p-4 flex justify-end">
+        <Button variant="outline" onClick={() => navigate("/login")} className="gap-2" size="sm">
           <LogIn className="h-4 w-4" />
-          Login Admin
+          <span className="hidden sm:inline">Login Admin</span>
+          <span className="sm:hidden">Login</span>
         </Button>
       </header>
 
       {/* Main Content */}
-      <main className="container max-w-2xl mx-auto px-4 pt-8 pb-20">
-        <div className="text-center space-y-8">
+      <main className="container max-w-2xl mx-auto px-3 sm:px-4 pt-4 sm:pt-8 pb-16 sm:pb-20">
+        <div className="text-center space-y-6 sm:space-y-8">
           {/* Hero Section */}
-          <div className="space-y-4">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
-              <Package className="h-10 w-10 text-primary" />
+          <div className="space-y-3 sm:space-y-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 mb-3 sm:mb-4">
+              <Package className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               Selamat Datang di SIPebaru
             </h1>
-            <p className="text-xl text-muted-foreground font-medium">
+            <p className="text-lg sm:text-xl text-muted-foreground font-medium px-2">
               Sistem Informasi Pengaduan Barang Rusak
             </p>
           </div>
 
           {/* Search Section */}
-          <div className="bg-card rounded-2xl shadow-lg border p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">
+          <div className="bg-card rounded-xl sm:rounded-2xl shadow-lg border p-4 sm:p-6 space-y-4">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground">
               Cek Status Pengaduan Anda
             </h2>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 placeholder="Masukkan Nomor Pengaduan (contoh: BR-0001)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="text-center text-lg h-12"
+                className="text-center text-base sm:text-lg h-11 sm:h-12"
               />
               <Button
                 onClick={handleSearch}
                 disabled={isSearching}
                 size="lg"
-                className="gap-2 px-6"
+                className="gap-2 px-6 h-11 sm:h-12 w-full sm:w-auto"
               >
                 {isSearching ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -134,28 +135,28 @@ const Home = () => {
           {searchResult && <StatusSearchResult complaint={searchResult} />}
 
           {/* Divider */}
-          <div className="relative py-4">
+          <div className="relative py-3 sm:py-4">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-gradient-to-br from-primary/5 via-background to-secondary/20 px-4 text-muted-foreground">
+              <span className="bg-gradient-to-br from-primary/5 via-background to-secondary/20 px-3 sm:px-4 text-muted-foreground">
                 Atau ajukan pengaduan baru
               </span>
             </div>
           </div>
 
           {/* Submit Complaint Button */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <Button
               onClick={() => setIsFormOpen(true)}
               size="lg"
-              className="gap-2 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-shadow"
+              className="gap-2 text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto"
             >
               <FileText className="h-5 w-5" />
               Ajukan Pengaduan
             </Button>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Laporkan barang rusak dengan cepat dan mudah
             </p>
           </div>

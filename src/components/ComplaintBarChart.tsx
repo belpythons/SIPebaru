@@ -91,25 +91,25 @@ const ComplaintBarChart = () => {
   return (
     <Card className="shadow-card">
       <CardHeader>
-        <CardTitle className="text-lg">Pengaduan per Departemen</CardTitle>
+        <CardTitle className="text-base sm:text-lg">Pengaduan per Departemen</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         {isLoading ? (
-          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[250px] sm:h-[300px] w-full" />
         ) : chartData.length === 0 ? (
-          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+          <div className="flex items-center justify-center h-[250px] sm:h-[300px] text-muted-foreground">
             Tidak ada data untuk ditampilkan
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full">
             <BarChart
               data={chartData}
-              margin={{ top: 20, right: 20, left: 0, bottom: 60 }}
+              margin={{ top: 20, right: 10, left: -10, bottom: 60 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 dataKey="department"
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 8 }}
                 tickLine={false}
                 axisLine={false}
                 angle={-45}
@@ -118,10 +118,11 @@ const ComplaintBarChart = () => {
                 interval={0}
               />
               <YAxis
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
+                width={30}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar
@@ -147,18 +148,18 @@ const ComplaintBarChart = () => {
         )}
         {/* Legend */}
         {!isLoading && chartData.length > 0 && (
-          <div className="flex justify-center gap-6 mt-4">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mt-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-destructive" />
-              <span className="text-sm text-muted-foreground">Belum Diproses</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">Belum Diproses</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-primary" />
-              <span className="text-sm text-muted-foreground">Sedang Diproses</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">Sedang Diproses</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Selesai</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">Selesai</span>
             </div>
           </div>
         )}

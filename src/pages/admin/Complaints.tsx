@@ -134,61 +134,126 @@ const Complaints = () => {
     return pages;
   };
 
+  // Mobile card view for complaints
+  const ComplaintCard = ({ complaint }: { complaint: Complaint }) => (
+    <div className="p-4 border rounded-lg space-y-3 bg-card">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-primary">{complaint.ticket_number}</span>
+        <Badge variant={statusVariants[complaint.status]}>
+          {statusLabels[complaint.status]}
+        </Badge>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <p className="text-muted-foreground">Pelapor</p>
+          <p className="font-medium truncate">{complaint.reporter_name}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Departemen</p>
+          <p className="font-medium truncate">{complaint.department}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Barang</p>
+          <p className="font-medium truncate">{complaint.item_name}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Jumlah</p>
+          <p className="font-medium">{complaint.quantity}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Tgl Lapor</p>
+          <p className="font-medium">{formatDate(complaint.reported_at)}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Tgl Selesai</p>
+          <p className="font-medium">{complaint.processed_at ? formatDate(complaint.processed_at) : "-"}</p>
+        </div>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+        className="w-full gap-1"
+      >
+        <Edit className="h-4 w-4" />
+        Edit
+      </Button>
+    </div>
+  );
+
   const ComplaintsTable = ({ data }: { data: Complaint[] }) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>No. Pengaduan</TableHead>
-          <TableHead>Tanggal Lapor</TableHead>
-          <TableHead>Tanggal Selesai</TableHead>
-          <TableHead>Nama Pelapor</TableHead>
-          <TableHead>Departemen</TableHead>
-          <TableHead>Nama Barang</TableHead>
-          <TableHead className="text-center">Jumlah</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-center">Aksi</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      {/* Desktop Table View */}
+      <div className="hidden lg:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>No. Pengaduan</TableHead>
+              <TableHead>Tanggal Lapor</TableHead>
+              <TableHead>Tanggal Selesai</TableHead>
+              <TableHead>Nama Pelapor</TableHead>
+              <TableHead>Departemen</TableHead>
+              <TableHead>Nama Barang</TableHead>
+              <TableHead className="text-center">Jumlah</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-center">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  {searchQuery ? "Tidak ada data yang cocok" : "Tidak ada data"}
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((complaint) => (
+                <TableRow key={complaint.id}>
+                  <TableCell className="font-medium">{complaint.ticket_number}</TableCell>
+                  <TableCell>{formatDate(complaint.reported_at)}</TableCell>
+                  <TableCell>
+                    {complaint.processed_at ? formatDate(complaint.processed_at) : "-"}
+                  </TableCell>
+                  <TableCell>{complaint.reporter_name}</TableCell>
+                  <TableCell>{complaint.department}</TableCell>
+                  <TableCell>{complaint.item_name}</TableCell>
+                  <TableCell className="text-center">{complaint.quantity}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusVariants[complaint.status]}>
+                      {statusLabels[complaint.status]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+                      className="gap-1"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
         {data.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-              {searchQuery ? "Tidak ada data yang cocok" : "Tidak ada data"}
-            </TableCell>
-          </TableRow>
+          <p className="text-center py-8 text-muted-foreground">
+            {searchQuery ? "Tidak ada data yang cocok" : "Tidak ada data"}
+          </p>
         ) : (
           data.map((complaint) => (
-            <TableRow key={complaint.id}>
-              <TableCell className="font-medium">{complaint.ticket_number}</TableCell>
-              <TableCell>{formatDate(complaint.reported_at)}</TableCell>
-              <TableCell>
-                {complaint.processed_at ? formatDate(complaint.processed_at) : "-"}
-              </TableCell>
-              <TableCell>{complaint.reporter_name}</TableCell>
-              <TableCell>{complaint.department}</TableCell>
-              <TableCell>{complaint.item_name}</TableCell>
-              <TableCell className="text-center">{complaint.quantity}</TableCell>
-              <TableCell>
-                <Badge variant={statusVariants[complaint.status]}>
-                  {statusLabels[complaint.status]}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
-                  className="gap-1"
-                >
-                  <Edit className="h-4 w-4" />
-                  Edit
-                </Button>
-              </TableCell>
-            </TableRow>
+            <ComplaintCard key={complaint.id} complaint={complaint} />
           ))
         )}
-      </TableBody>
-    </Table>
+      </div>
+    </>
   );
 
   if (isLoading) {
@@ -226,22 +291,24 @@ const Complaints = () => {
               value={activeTab}
               onValueChange={(v) => setActiveTab(v as typeof activeTab)}
             >
-              <TabsList className="grid w-full grid-cols-3 max-w-md">
-                <TabsTrigger value="pending" className="gap-2">
-                  Belum Diproses
-                  <Badge variant="destructive" className="ml-1">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="pending" className="text-xs sm:text-sm px-2 sm:px-4">
+                  <span className="hidden sm:inline">Belum Diproses</span>
+                  <span className="sm:hidden">Pending</span>
+                  <Badge variant="destructive" className="ml-1 text-xs">
                     {complaints.filter((c) => c.status === "pending").length}
                   </Badge>
                 </TabsTrigger>
-                <TabsTrigger value="processing" className="gap-2">
-                  Sedang Diproses
-                  <Badge variant="default" className="ml-1">
+                <TabsTrigger value="processing" className="text-xs sm:text-sm px-2 sm:px-4">
+                  <span className="hidden sm:inline">Sedang Diproses</span>
+                  <span className="sm:hidden">Proses</span>
+                  <Badge variant="default" className="ml-1 text-xs">
                     {complaints.filter((c) => c.status === "processing").length}
                   </Badge>
                 </TabsTrigger>
-                <TabsTrigger value="completed" className="gap-2">
+                <TabsTrigger value="completed" className="text-xs sm:text-sm px-2 sm:px-4">
                   Selesai
-                  <Badge variant="secondary" className="ml-1">
+                  <Badge variant="secondary" className="ml-1 text-xs">
                     {complaints.filter((c) => c.status === "completed").length}
                   </Badge>
                 </TabsTrigger>
@@ -259,19 +326,19 @@ const Complaints = () => {
                 <p className="text-sm text-muted-foreground">
                   Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredComplaints.length)} dari {filteredComplaints.length} data
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="gap-1"
+                    className="gap-1 px-2 sm:px-3"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Sebelumnya
+                    <span className="hidden sm:inline">Sebelumnya</span>
                   </Button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="hidden sm:flex items-center gap-1">
                     {getPageNumbers().map((page, index) =>
                       typeof page === "number" ? (
                         <Button
@@ -290,15 +357,19 @@ const Complaints = () => {
                       )
                     )}
                   </div>
+                  
+                  <span className="sm:hidden text-sm text-muted-foreground">
+                    {currentPage}/{totalPages}
+                  </span>
 
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className="gap-1"
+                    className="gap-1 px-2 sm:px-3"
                   >
-                    Selanjutnya
+                    <span className="hidden sm:inline">Selanjutnya</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>

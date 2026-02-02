@@ -207,17 +207,17 @@ const EditComplaint = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 animate-fade-in max-w-3xl">
-        <div className="flex items-center gap-4">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in max-w-3xl">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <Button
             variant="outline"
             onClick={() => navigate("/admin/complaints")}
-            className="gap-2"
+            className="gap-2 w-fit"
           >
             <ArrowLeft className="h-4 w-4" />
             Kembali
           </Button>
-          <h1 className="text-2xl font-bold text-foreground">Edit Pengaduan</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Edit Pengaduan</h1>
         </div>
 
         <Card className="shadow-card">
@@ -401,8 +401,8 @@ const EditComplaint = () => {
               </div>
 
               {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" className="gap-2" disabled={isSaving}>
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button type="submit" className="gap-2 w-full sm:w-auto" disabled={isSaving}>
                   <Save className="h-4 w-4" />
                   {isSaving ? "Menyimpan..." : "Simpan"}
                 </Button>
@@ -410,6 +410,7 @@ const EditComplaint = () => {
                   type="button"
                   variant="outline"
                   onClick={() => navigate("/admin/complaints")}
+                  className="w-full sm:w-auto"
                 >
                   Kembali
                 </Button>

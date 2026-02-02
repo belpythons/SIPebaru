@@ -191,21 +191,21 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   if (submissionResult) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-md">
-          <div className="flex flex-col items-center text-center py-6">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600" />
+        <DialogContent className="max-w-[90vw] sm:max-w-md mx-auto">
+          <div className="flex flex-col items-center text-center py-4 sm:py-6">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-green-100 flex items-center justify-center mb-3 sm:mb-4">
+              <CheckCircle className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
             </div>
-            <h2 className="text-xl font-semibold mb-2">Pengaduan Berhasil Dikirim!</h2>
-            <p className="text-muted-foreground mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold mb-2">Pengaduan Berhasil Dikirim!</h2>
+            <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
               Nomor pengaduan Anda:
             </p>
-            <div className="bg-muted px-6 py-3 rounded-lg mb-6">
-              <span className="text-2xl font-bold text-primary">
+            <div className="bg-muted px-4 sm:px-6 py-2 sm:py-3 rounded-lg mb-4 sm:mb-6">
+              <span className="text-xl sm:text-2xl font-bold text-primary break-all">
                 {submissionResult.ticketNumber}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 px-2">
               Simpan nomor ini untuk mengecek status pengaduan Anda.
             </p>
             <Button onClick={handleClose} className="w-full">
@@ -219,12 +219,12 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto mx-auto">
         <DialogHeader>
-          <DialogTitle>Ajukan Pengaduan Barang Rusak</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">Ajukan Pengaduan Barang Rusak</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
             <FormField
               control={form.control}
               name="reporter_name"
@@ -341,16 +341,17 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
               </p>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 sm:pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleClose}
                 disabled={isSubmitting}
+                className="w-full sm:w-auto"
               >
                 Batal
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Kirim Pengaduan
               </Button>

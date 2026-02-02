@@ -68,11 +68,11 @@ const Login = () => {
     <div className="min-h-screen bg-secondary flex flex-col">
       {/* Header */}
       <header className="bg-primary shadow-soft">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-          <FileText className="h-8 w-8 text-primary-foreground" />
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center gap-2 sm:gap-3">
+          <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-primary-foreground" />
           <div>
-            <h1 className="text-xl font-bold text-primary-foreground">SIPebaru</h1>
-            <p className="text-sm text-primary-foreground/80">
+            <h1 className="text-lg sm:text-xl font-bold text-primary-foreground">SIPebaru</h1>
+            <p className="text-xs sm:text-sm text-primary-foreground/80">
               Sistem Informasi Pengaduan Barang Rusak
             </p>
           </div>
@@ -80,18 +80,18 @@ const Login = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center p-3 sm:p-4">
         <Card className="w-full max-w-md shadow-soft animate-fade-in">
-          <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl font-bold text-foreground">
+          <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
+            <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
               Admin Login
             </CardTitle>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               Masuk ke panel administrasi
             </p>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -102,6 +102,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
+                  className="h-10 sm:h-11"
                 />
               </div>
 
@@ -115,12 +116,13 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
+                  className="h-10 sm:h-11"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full gap-2"
+                className="w-full gap-2 h-10 sm:h-11"
                 disabled={isLoading}
               >
                 <LogIn className="h-4 w-4" />
@@ -130,9 +132,9 @@ const Login = () => {
               <div className="text-center">
                 <Link
                   to="/"
-                  className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1"
+                  className="text-xs sm:text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                   Kembali ke Halaman Utama
                 </Link>
               </div>

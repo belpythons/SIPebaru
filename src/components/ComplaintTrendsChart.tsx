@@ -119,10 +119,10 @@ const ComplaintTrendsChart = () => {
 
   return (
     <Card className="shadow-card">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg">Tren Pengaduan (30 Hari Terakhir)</CardTitle>
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-2">
+        <CardTitle className="text-base sm:text-lg">Tren Pengaduan (30 Hari)</CardTitle>
         <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Pilih Departemen" />
           </SelectTrigger>
           <SelectContent>
@@ -135,34 +135,35 @@ const ComplaintTrendsChart = () => {
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         {isLoading ? (
-          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[250px] sm:h-[300px] w-full" />
         ) : chartData.length === 0 ? (
-          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+          <div className="flex items-center justify-center h-[250px] sm:h-[300px] text-muted-foreground">
             Tidak ada data untuk ditampilkan
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ChartContainer config={chartConfig} className="h-[250px] sm:h-[300px] w-full">
             <LineChart
               data={chartData}
-              margin={{ top: 20, right: 20, left: 0, bottom: 20 }}
+              margin={{ top: 20, right: 10, left: -10, bottom: 20 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
                 tickMargin={8}
               />
               <YAxis
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
-                tickMargin={8}
+                tickMargin={4}
+                width={30}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Line
@@ -170,8 +171,8 @@ const ComplaintTrendsChart = () => {
                 dataKey="count"
                 stroke="var(--color-count)"
                 strokeWidth={2}
-                dot={{ fill: "var(--color-count)", strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, strokeWidth: 2 }}
+                dot={{ fill: "var(--color-count)", strokeWidth: 2, r: 3 }}
+                activeDot={{ r: 5, strokeWidth: 2 }}
               />
             </LineChart>
           </ChartContainer>

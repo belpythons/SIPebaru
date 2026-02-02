@@ -158,9 +158,9 @@ const Dashboard = () => {
         {/* Monthly Statistics Table */}
         <MonthlyStatsTable />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Recent Reports */}
-          <Card className="lg:col-span-2 shadow-card">
+          <Card className="xl:col-span-2 shadow-card">
             <CardHeader>
               <CardTitle className="text-lg">Pengaduan Terbaru</CardTitle>
             </CardHeader>
@@ -170,34 +170,64 @@ const Dashboard = () => {
                   Belum ada pengaduan
                 </p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>No. Pengaduan</TableHead>
-                      <TableHead>Nama Pelapor</TableHead>
-                      <TableHead>Departemen</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Tanggal</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>No. Pengaduan</TableHead>
+                          <TableHead>Nama Pelapor</TableHead>
+                          <TableHead>Departemen</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Tanggal</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recentComplaints.map((complaint) => (
+                          <TableRow key={complaint.id}>
+                            <TableCell className="font-medium">
+                              {complaint.ticket_number}
+                            </TableCell>
+                            <TableCell>{complaint.reporter_name}</TableCell>
+                            <TableCell>{complaint.department}</TableCell>
+                            <TableCell>
+                              <Badge variant={statusVariants[complaint.status]}>
+                                {statusLabels[complaint.status]}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{formatDate(complaint.reported_at)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
                     {recentComplaints.map((complaint) => (
-                      <TableRow key={complaint.id}>
-                        <TableCell className="font-medium">
-                          {complaint.ticket_number}
-                        </TableCell>
-                        <TableCell>{complaint.reporter_name}</TableCell>
-                        <TableCell>{complaint.department}</TableCell>
-                        <TableCell>
-                          <Badge variant={statusVariants[complaint.status]}>
+                      <div key={complaint.id} className="p-3 border rounded-lg space-y-2 bg-muted/30">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-primary text-sm">{complaint.ticket_number}</span>
+                          <Badge variant={statusVariants[complaint.status]} className="text-xs">
                             {statusLabels[complaint.status]}
                           </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(complaint.reported_at)}</TableCell>
-                      </TableRow>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 text-sm">
+                          <div>
+                            <p className="text-muted-foreground text-xs">Pelapor</p>
+                            <p className="font-medium truncate">{complaint.reporter_name}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-xs">Departemen</p>
+                            <p className="font-medium truncate">{complaint.department}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{formatDate(complaint.reported_at)}</p>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

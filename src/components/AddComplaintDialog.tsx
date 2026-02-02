@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, CalendarIcon, Upload, X } from "lucide-react";
+import { Loader2, Plus, CalendarIcon, Upload, X, Search } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -53,11 +54,6 @@ const formSchema = z.object({
     .trim()
     .min(1, "Departemen wajib diisi")
     .max(120, "Departemen maksimal 120 karakter"),
-  kompartemen: z
-    .string()
-    .trim()
-    .max(120, "Kompartemen maksimal 120 karakter")
-    .optional(),
   item_name: z
     .string()
     .trim()
@@ -86,6 +82,8 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [departmentSearch, setDepartmentSearch] = useState("");
+  const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
 
   // Fetch departments from database
   const { data: departments = [] } = useQuery({
@@ -101,12 +99,18 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
     },
   });
 
+  const filteredDepartments = useMemo(() => {
+    if (!departmentSearch.trim()) return departments;
+    return departments.filter((dept) =>
+      dept.name.toLowerCase().includes(departmentSearch.toLowerCase())
+    );
+  }, [departments, departmentSearch]);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       reporter_name: "",
       department: "",
-      kompartemen: "",
       item_name: "",
       quantity: 1,
       description: "",
@@ -174,7 +178,6 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
         ticket_number: ticketData,
         reporter_name: data.reporter_name.trim(),
         department: data.department.trim(),
-        kompartemen: data.kompartemen?.trim() || null,
         item_name: data.item_name.trim(),
         quantity: data.quantity,
         description: data.description?.trim() || null,
@@ -194,6 +197,8 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
       form.reset();
       setPhotoFile(null);
       setPhotoPreview(null);
+      setDepartmentSearch("");
+      setIsDepartmentOpen(false);
       setOpen(false);
       onSuccess();
     } catch (error: any) {
@@ -242,45 +247,58 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Departemen</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih departemen" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.name}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="kompartemen"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kompartemen (Opsional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih kompartemen" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.name}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <div className="relative">
+                      <div
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer hover:bg-accent/50 transition-colors"
+                        onClick={() => setIsDepartmentOpen(!isDepartmentOpen)}
+                      >
+                        <span className={field.value ? "text-foreground" : "text-muted-foreground"}>
+                          {field.value || "Pilih departemen"}
+                        </span>
+                        <Search className="h-4 w-4 opacity-50" />
+                      </div>
+                      
+                      {isDepartmentOpen && (
+                        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg">
+                          <div className="p-2 border-b">
+                            <Input
+                              placeholder="Cari departemen..."
+                              value={departmentSearch}
+                              onChange={(e) => setDepartmentSearch(e.target.value)}
+                              className="h-8"
+                              autoFocus
+                            />
+                          </div>
+                          <ScrollArea className="h-[200px]">
+                            <div className="p-1">
+                              {filteredDepartments.length === 0 ? (
+                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                  Departemen tidak ditemukan
+                                </div>
+                              ) : (
+                                filteredDepartments.map((dept) => (
+                                  <div
+                                    key={dept.id}
+                                    className={`relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground ${
+                                      field.value === dept.name ? "bg-accent" : ""
+                                    }`}
+                                    onClick={() => {
+                                      field.onChange(dept.name);
+                                      setIsDepartmentOpen(false);
+                                      setDepartmentSearch("");
+                                    }}
+                                  >
+                                    {dept.name}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

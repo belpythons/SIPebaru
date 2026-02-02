@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Upload, X, CheckCircle, Search } from "lucide-react";
+import { Ticket } from "lucide-react";
+import { Loader2, Upload, X, CheckCircle, Search, Ticket as TicketIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,45 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [departmentSearch, setDepartmentSearch] = useState("");
   const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
+  const [nextTicketNumber, setNextTicketNumber] = useState<string | null>(null);
+  const [isLoadingTicket, setIsLoadingTicket] = useState(false);
+
+  // Fetch next ticket number when dialog opens
+  useEffect(() => {
+    const fetchNextTicketNumber = async () => {
+      if (open && !submissionResult) {
+        setIsLoadingTicket(true);
+        try {
+          // Get current max ticket number to preview next one
+          const { data, error } = await supabase
+            .from("complaints")
+            .select("ticket_number")
+            .order("created_at", { ascending: false })
+            .limit(1);
+          
+          if (error) throw error;
+          
+          let nextNumber = 1;
+          if (data && data.length > 0) {
+            const lastTicket = data[0].ticket_number;
+            const match = lastTicket.match(/BR-(\d+)/);
+            if (match) {
+              nextNumber = parseInt(match[1], 10) + 1;
+            }
+          }
+          
+          setNextTicketNumber(`BR-${String(nextNumber).padStart(4, '0')}`);
+        } catch (error) {
+          console.error("Error fetching next ticket number:", error);
+          setNextTicketNumber(null);
+        } finally {
+          setIsLoadingTicket(false);
+        }
+      }
+    };
+
+    fetchNextTicketNumber();
+  }, [open, submissionResult]);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
@@ -130,6 +170,7 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
     setSubmissionResult(null);
     setDepartmentSearch("");
     setIsDepartmentOpen(false);
+    setNextTicketNumber(null);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -241,6 +282,24 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Ajukan Pengaduan Barang Rusak</DialogTitle>
         </DialogHeader>
+        
+        {/* Display next ticket number */}
+        <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 sm:p-4 mb-2">
+          <div className="flex items-center gap-2 mb-1">
+            <TicketIcon className="h-4 w-4 text-primary" />
+            <span className="text-xs sm:text-sm text-muted-foreground">Nomor Pengaduan Anda</span>
+          </div>
+          {isLoadingTicket ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Memuat...</span>
+            </div>
+          ) : (
+            <span className="text-xl sm:text-2xl font-bold text-primary tracking-wide">
+              {nextTicketNumber || "BR-XXXX"}
+            </span>
+          )}
+        </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
             <FormField

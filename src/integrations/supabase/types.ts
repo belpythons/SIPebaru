@@ -22,6 +22,8 @@ export type Database = {
           description: string | null
           id: string
           item_name: string
+          kompartemen: string | null
+          photo_url: string | null
           processed_at: string | null
           quantity: number
           reported_at: string
@@ -37,6 +39,8 @@ export type Database = {
           description?: string | null
           id?: string
           item_name: string
+          kompartemen?: string | null
+          photo_url?: string | null
           processed_at?: string | null
           quantity?: number
           reported_at?: string
@@ -52,6 +56,8 @@ export type Database = {
           description?: string | null
           id?: string
           item_name?: string
+          kompartemen?: string | null
+          photo_url?: string | null
           processed_at?: string | null
           quantity?: number
           reported_at?: string

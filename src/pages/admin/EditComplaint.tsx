@@ -23,9 +23,11 @@ interface Complaint {
   ticket_number: string;
   reporter_name: string;
   department: string;
+  kompartemen: string | null;
   item_name: string;
   quantity: number;
   description: string | null;
+  photo_url: string | null;
   status: "pending" | "processing" | "completed";
   admin_note: string | null;
   reported_at: string;
@@ -42,6 +44,7 @@ const EditComplaint = () => {
   const [formData, setFormData] = useState({
     reporter_name: "",
     department: "",
+    kompartemen: "",
     item_name: "",
     quantity: 1,
     description: "",
@@ -90,6 +93,7 @@ const EditComplaint = () => {
       setFormData({
         reporter_name: data.reporter_name,
         department: data.department,
+        kompartemen: data.kompartemen || "",
         item_name: data.item_name,
         quantity: data.quantity,
         description: data.description || "",
@@ -140,6 +144,7 @@ const EditComplaint = () => {
         .update({
           reporter_name: formData.reporter_name,
           department: formData.department,
+          kompartemen: formData.kompartemen || null,
           item_name: formData.item_name,
           quantity: formData.quantity,
           description: formData.description || null,
@@ -257,6 +262,37 @@ const EditComplaint = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="kompartemen">Kompartemen</Label>
+                <Select 
+                  value={formData.kompartemen} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, kompartemen: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih kompartemen (opsional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departmentsList.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.name}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Photo Preview */}
+              {complaint.photo_url && (
+                <div className="space-y-2">
+                  <Label>Foto Barang Rusak</Label>
+                  <img 
+                    src={complaint.photo_url} 
+                    alt="Foto barang rusak" 
+                    className="w-full max-w-sm rounded-lg border"
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

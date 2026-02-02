@@ -71,18 +71,45 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/20">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/20 flex flex-col">
       {/* Header */}
-      <header className="p-3 sm:p-4 flex justify-end">
-        <Button variant="outline" onClick={() => navigate("/login")} className="gap-2" size="sm">
-          <LogIn className="h-4 w-4" />
-          <span className="hidden sm:inline">Login Admin</span>
-          <span className="sm:hidden">Login</span>
-        </Button>
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="container max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex h-14 sm:h-16 items-center justify-between">
+            {/* Logo & Brand */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary text-primary-foreground">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-base sm:text-lg text-foreground leading-tight">SIPebaru</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Sistem Informasi Pengaduan Barang Rusak</span>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex items-center gap-2 sm:gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2 text-muted-foreground hover:text-foreground"
+                onClick={() => setIsFormOpen(true)}
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Ajukan Pengaduan</span>
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/login")} className="gap-2" size="sm">
+                <LogIn className="h-4 w-4" />
+                <span className="hidden sm:inline">Login Admin</span>
+                <span className="sm:hidden">Login</span>
+              </Button>
+            </nav>
+          </div>
+        </div>
       </header>
 
       {/* Main Content */}
-      <main className="container max-w-2xl mx-auto px-3 sm:px-4 pt-4 sm:pt-8 pb-16 sm:pb-20">
+      <main className="flex-1 container max-w-2xl mx-auto px-3 sm:px-4 py-8 sm:py-12">
         <div className="text-center space-y-6 sm:space-y-8">
           {/* Hero Section */}
           <div className="space-y-3 sm:space-y-4">
@@ -164,8 +191,81 @@ const Home = () => {
       </main>
 
       {/* Footer */}
-      <footer className="container mx-auto px-4 py-6 text-center text-muted-foreground text-sm">
-        © 2024 SIPebaru - Sistem Informasi Pengaduan Barang Rusak
+      <footer className="bg-card border-t mt-auto">
+        <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Brand */}
+            <div className="sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
+                  <Package className="h-4 w-4" />
+                </div>
+                <span className="font-bold text-lg text-foreground">SIPebaru</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Sistem Informasi Pengaduan Barang Rusak untuk memudahkan pelaporan dan tracking status perbaikan barang.
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Tautan Cepat</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <button 
+                    onClick={() => setIsFormOpen(true)}
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Ajukan Pengaduan
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => document.querySelector('input')?.focus()}
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Cek Status Pengaduan
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => navigate("/login")}
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Login Admin
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Information */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Informasi</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>Jam Operasional:</li>
+                <li className="pl-2">Senin - Jumat: 08:00 - 16:00</li>
+                <li className="pl-2">Sabtu: 08:00 - 12:00</li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="font-semibold text-foreground mb-4">Kontak</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>Email: support@sipebaru.id</li>
+                <li>Telepon: (021) 123-4567</li>
+                <li>WhatsApp: 0812-3456-7890</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="border-t mt-8 pt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} SIPebaru - Sistem Informasi Pengaduan Barang Rusak. All rights reserved.
+            </p>
+          </div>
+        </div>
       </footer>
 
       {/* Complaint Form Dialog */}

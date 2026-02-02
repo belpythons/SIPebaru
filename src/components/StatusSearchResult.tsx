@@ -1,7 +1,7 @@
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Building2, MapPin, Calendar, FileText } from "lucide-react";
+import { Package, Building2, Calendar, FileText } from "lucide-react";
 
 interface Complaint {
   ticket_number: string;
@@ -67,16 +67,6 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
               <p className="font-medium">{complaint.department}</p>
             </div>
           </div>
-
-          {complaint.kompartemen && (
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Kompartemen</p>
-                <p className="font-medium">{complaint.kompartemen}</p>
-              </div>
-            </div>
-          )}
 
           <div className="flex items-start gap-3">
             <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />

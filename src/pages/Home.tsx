@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, FileText, LogIn, Loader2 } from "lucide-react";
+import { Search, FileText, LogIn, Loader2, Package } from "lucide-react";
 import { ComplaintFormDialog } from "@/components/ComplaintFormDialog";
 import { StatusSearchResult } from "@/components/StatusSearchResult";
 
@@ -69,7 +69,7 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/20">
       {/* Header */}
       <header className="p-4 flex justify-end">
         <Button variant="outline" onClick={() => navigate("/login")} className="gap-2">
@@ -79,20 +79,26 @@ const Home = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container max-w-2xl mx-auto px-4 pt-12 pb-20">
+      <main className="container max-w-2xl mx-auto px-4 pt-8 pb-20">
         <div className="text-center space-y-8">
-          {/* Title */}
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Cek Pengaduan Barang Rusak Anda
+          {/* Hero Section */}
+          <div className="space-y-4">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
+              <Package className="h-10 w-10 text-primary" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Selamat Datang di SIPebaru
             </h1>
-            <p className="text-muted-foreground">
-              Masukkan nomor pengaduan untuk melihat status laporan Anda
+            <p className="text-xl text-muted-foreground font-medium">
+              Sistem Informasi Pengaduan Barang Rusak
             </p>
           </div>
 
           {/* Search Section */}
-          <div className="space-y-4">
+          <div className="bg-card rounded-2xl shadow-lg border p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">
+              Cek Status Pengaduan Anda
+            </h2>
             <div className="flex gap-2">
               <Input
                 placeholder="Masukkan Nomor Pengaduan (contoh: BR-0001)"
@@ -131,21 +137,26 @@ const Home = () => {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-4 text-muted-foreground">
-                Atau ajukan pengaduan Anda
+              <span className="bg-gradient-to-br from-primary/5 via-background to-secondary/20 px-4 text-muted-foreground">
+                Atau ajukan pengaduan baru
               </span>
             </div>
           </div>
 
           {/* Submit Complaint Button */}
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            size="lg"
-            className="gap-2 text-lg px-8 py-6"
-          >
-            <FileText className="h-5 w-5" />
-            Ajukan Pengaduan
-          </Button>
+          <div className="space-y-4">
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              size="lg"
+              className="gap-2 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-shadow"
+            >
+              <FileText className="h-5 w-5" />
+              Ajukan Pengaduan
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Laporkan barang rusak dengan cepat dan mudah
+            </p>
+          </div>
         </div>
       </main>
 

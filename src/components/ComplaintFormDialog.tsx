@@ -37,11 +37,6 @@ const formSchema = z.object({
     .trim()
     .min(1, "Departemen wajib dipilih")
     .max(120, "Departemen maksimal 120 karakter"),
-  kompartemen: z
-    .string()
-    .trim()
-    .max(120, "Kompartemen maksimal 120 karakter")
-    .optional(),
   item_name: z
     .string()
     .trim()
@@ -94,7 +89,6 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
     defaultValues: {
       reporter_name: "",
       department: "",
-      kompartemen: "",
       item_name: "",
       description: "",
     },
@@ -166,7 +160,6 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
         ticket_number: ticketData,
         reporter_name: data.reporter_name.trim(),
         department: data.department.trim(),
-        kompartemen: data.kompartemen?.trim() || null,
         item_name: data.item_name.trim(),
         quantity: 1,
         description: data.description.trim(),
@@ -260,27 +253,6 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
                       placeholder="Pilih departemen"
                       searchPlaceholder="Cari departemen..."
                       emptyText="Departemen tidak ditemukan"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="kompartemen"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kompartemen</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      options={departmentOptions}
-                      value={field.value || ""}
-                      onValueChange={field.onChange}
-                      placeholder="Pilih kompartemen (opsional)"
-                      searchPlaceholder="Cari kompartemen..."
-                      emptyText="Kompartemen tidak ditemukan"
                     />
                   </FormControl>
                   <FormMessage />

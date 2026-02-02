@@ -119,13 +119,13 @@ const MonthlyStatsTable = () => {
 
   return (
     <Card className="shadow-card">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-lg flex items-center gap-2">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-4">
+        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           <Calendar className="h-5 w-5 text-primary" />
           Statistik Bulanan
         </CardTitle>
         <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-full sm:w-32">
             <SelectValue placeholder="Pilih tahun" />
           </SelectTrigger>
           <SelectContent>

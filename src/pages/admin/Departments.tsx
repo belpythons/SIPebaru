@@ -203,63 +203,109 @@ const Departments = () => {
         {/* Table */}
         <Card>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">No</TableHead>
-                  <TableHead>Nama Departemen</TableHead>
-                  <TableHead>Tanggal Dibuat</TableHead>
-                  <TableHead className="w-24 text-center">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8">
-                      Memuat data...
-                    </TableCell>
+                    <TableHead className="w-12">No</TableHead>
+                    <TableHead>Nama Departemen</TableHead>
+                    <TableHead>Tanggal Dibuat</TableHead>
+                    <TableHead className="w-24 text-center">Aksi</TableHead>
                   </TableRow>
-                ) : departments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                      Belum ada data departemen
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  departments.map((dept, index) => (
-                    <TableRow key={dept.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">{dept.name}</TableCell>
-                      <TableCell>
-                        {format(new Date(dept.created_at), "dd MMM yyyy, HH:mm", {
-                          locale: id,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-muted-foreground hover:text-foreground"
-                            onClick={() => handleEditClick(dept)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDeleteClick(dept)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">
+                        Memuat data...
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : departments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        Belum ada data departemen
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    departments.map((dept, index) => (
+                      <TableRow key={dept.id}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell className="font-medium">{dept.name}</TableCell>
+                        <TableCell>
+                          {format(new Date(dept.created_at), "dd MMM yyyy, HH:mm", {
+                            locale: id,
+                          })}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-muted-foreground hover:text-foreground"
+                              onClick={() => handleEditClick(dept)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteClick(dept)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden p-4 space-y-3">
+              {isLoading ? (
+                <p className="text-center py-8">Memuat data...</p>
+              ) : departments.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  Belum ada data departemen
+                </p>
+              ) : (
+                departments.map((dept, index) => (
+                  <div key={dept.id} className="p-4 border rounded-lg space-y-2 bg-card">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">#{index + 1}</span>
+                        <span className="font-semibold">{dept.name}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-foreground h-8 w-8"
+                          onClick={() => handleEditClick(dept)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+                          onClick={() => handleDeleteClick(dept)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(dept.created_at), "dd MMM yyyy, HH:mm", { locale: id })}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

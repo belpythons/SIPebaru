@@ -401,63 +401,116 @@ const Accounts = () => {
             <CardTitle className="text-lg">Daftar Akun Admin</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Tanggal Dibuat</TableHead>
-                  <TableHead className="text-center">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {profiles.length === 0 ? (
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                      Belum ada akun admin
-                    </TableCell>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Tanggal Dibuat</TableHead>
+                    <TableHead className="text-center">Aksi</TableHead>
                   </TableRow>
-                ) : (
-                  profiles.map((profile) => (
-                    <TableRow key={profile.id}>
-                      <TableCell className="font-medium">
-                        {profile.username}
-                        {profile.user_id === currentUserId && (
-                          <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>
-                        )}
+                </TableHeader>
+                <TableBody>
+                  {profiles.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                        Belum ada akun admin
                       </TableCell>
-                      <TableCell>{formatDate(profile.created_at)}</TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex justify-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenDialog(profile)}
-                            className="gap-1"
-                          >
-                            <Edit className="h-4 w-4" />
-                            Edit
-                          </Button>
-                          {profile.user_id !== currentUserId && (
+                    </TableRow>
+                  ) : (
+                    profiles.map((profile) => (
+                      <TableRow key={profile.id}>
+                        <TableCell className="font-medium">
+                          {profile.username}
+                          {profile.user_id === currentUserId && (
+                            <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{formatDate(profile.created_at)}</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex justify-center gap-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                setSelectedProfile(profile);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                              className="gap-1 text-destructive hover:text-destructive"
+                              onClick={() => handleOpenDialog(profile)}
+                              className="gap-1"
                             >
-                              <Trash2 className="h-4 w-4" />
-                              Hapus
+                              <Edit className="h-4 w-4" />
+                              Edit
                             </Button>
+                            {profile.user_id !== currentUserId && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedProfile(profile);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                className="gap-1 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Hapus
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {profiles.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  Belum ada akun admin
+                </p>
+              ) : (
+                profiles.map((profile) => (
+                  <div key={profile.id} className="p-4 border rounded-lg space-y-3 bg-card">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">
+                          {profile.username}
+                          {profile.user_id === currentUserId && (
+                            <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>
                           )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                        </p>
+                        <p className="text-sm text-muted-foreground">{formatDate(profile.created_at)}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenDialog(profile)}
+                        className="flex-1 gap-1"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit
+                      </Button>
+                      {profile.user_id !== currentUserId && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedProfile(profile);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                          className="flex-1 gap-1 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Hapus
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
 

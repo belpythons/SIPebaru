@@ -20,6 +20,7 @@ interface ComplaintResult {
   description: string | null;
   reporter_name: string;
   admin_note: string | null;
+  completion_photo_url: string | null;
 }
 
 const Home = () => {
@@ -47,7 +48,7 @@ const Home = () => {
     try {
       const { data, error } = await supabase
         .from("complaints")
-        .select("ticket_number, item_name, department, kompartemen, status, reported_at, processed_at, completed_at, description, reporter_name, admin_note")
+        .select("ticket_number, item_name, department, kompartemen, status, reported_at, processed_at, completed_at, description, reporter_name, admin_note, completion_photo_url")
         .eq("ticket_number", searchQuery.trim().toUpperCase())
         .maybeSingle();
 

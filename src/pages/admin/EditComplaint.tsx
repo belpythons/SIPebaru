@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Save, ArrowLeft } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Upload, X, ImageIcon } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ interface Complaint {
   quantity: number;
   description: string | null;
   photo_url: string | null;
+  completion_photo_url: string | null;
   status: "pending" | "processing" | "completed";
   admin_note: string | null;
   reported_at: string;
@@ -42,6 +43,10 @@ const EditComplaint = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [complaint, setComplaint] = useState<Complaint | null>(null);
+  const [completionPhoto, setCompletionPhoto] = useState<File | null>(null);
+  const [completionPhotoPreview, setCompletionPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const completionPhotoRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     reporter_name: "",
     department: "",
@@ -133,10 +138,62 @@ const EditComplaint = () => {
   };
 
   const handleStatusChange = (value: string) => {
+    // Reset completion photo if status is changed from completed to something else
+    if (value !== "completed") {
+      setCompletionPhoto(null);
+      setCompletionPhotoPreview(null);
+    }
     setFormData((prev) => ({
       ...prev,
       status: value as "pending" | "processing" | "completed",
     }));
+  };
+
+  const handleCompletionPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File terlalu besar",
+          description: "Maksimal ukuran file adalah 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      setCompletionPhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCompletionPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeCompletionPhoto = () => {
+    setCompletionPhoto(null);
+    setCompletionPhotoPreview(null);
+    if (completionPhotoRef.current) {
+      completionPhotoRef.current.value = "";
+    }
+  };
+
+  const uploadCompletionPhoto = async (): Promise<string | null> => {
+    if (!completionPhoto || !id) return complaint?.completion_photo_url || null;
+
+    const fileExt = completionPhoto.name.split(".").pop();
+    const fileName = `completion-${id}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("complaint-photos")
+      .upload(fileName, completionPhoto);
+
+    if (uploadError) throw uploadError;
+
+    const { data: urlData } = supabase.storage
+      .from("complaint-photos")
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,6 +201,20 @@ const EditComplaint = () => {
     setIsSaving(true);
 
     try {
+      let completionPhotoUrl = complaint?.completion_photo_url || null;
+
+      // Upload completion photo if status is completed and there's a new photo
+      if (formData.status === "completed" && completionPhoto) {
+        setIsUploadingPhoto(true);
+        completionPhotoUrl = await uploadCompletionPhoto();
+        setIsUploadingPhoto(false);
+      }
+
+      // Clear completion photo if status is not completed
+      if (formData.status !== "completed") {
+        completionPhotoUrl = null;
+      }
+
       const { error } = await supabase
         .from("complaints")
         .update({
@@ -155,6 +226,7 @@ const EditComplaint = () => {
           description: formData.description || null,
           status: formData.status,
           admin_note: formData.admin_note || null,
+          completion_photo_url: completionPhotoUrl,
           processed_at:
             formData.status !== "pending" && formData.processed_at
               ? new Date(formData.processed_at).toISOString()
@@ -175,6 +247,7 @@ const EditComplaint = () => {
 
       navigate("/admin/complaints");
     } catch (error) {
+      console.error("Error saving complaint:", error);
       toast({
         title: "Gagal",
         description: "Terjadi kesalahan saat menyimpan",
@@ -182,6 +255,7 @@ const EditComplaint = () => {
       });
     } finally {
       setIsSaving(false);
+      setIsUploadingPhoto(false);
     }
   };
 
@@ -400,11 +474,74 @@ const EditComplaint = () => {
                 />
               </div>
 
+              {/* Completion Photo Upload - Only shown when status is completed */}
+              {formData.status === "completed" && (
+                <div className="space-y-2">
+                  <Label>Foto Bukti Penyelesaian</Label>
+                  
+                  {/* Existing completion photo */}
+                  {complaint?.completion_photo_url && !completionPhotoPreview && (
+                    <div className="space-y-2">
+                      <img 
+                        src={complaint.completion_photo_url} 
+                        alt="Foto bukti penyelesaian" 
+                        className="w-full max-w-sm rounded-lg border"
+                      />
+                      <p className="text-xs text-muted-foreground">Foto bukti penyelesaian saat ini</p>
+                    </div>
+                  )}
+
+                  {/* New photo preview */}
+                  {completionPhotoPreview && (
+                    <div className="relative w-full max-w-sm">
+                      <img 
+                        src={completionPhotoPreview} 
+                        alt="Preview foto bukti penyelesaian" 
+                        className="w-full rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8"
+                        onClick={removeCompletionPhoto}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  {!completionPhotoPreview && (
+                    <div 
+                      className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                      onClick={() => completionPhotoRef.current?.click()}
+                    >
+                      <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {complaint?.completion_photo_url 
+                          ? "Klik untuk mengganti foto bukti penyelesaian"
+                          : "Klik untuk upload foto bukti penyelesaian"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Maks. 5MB (JPG, PNG)</p>
+                    </div>
+                  )}
+
+                  <input
+                    ref={completionPhotoRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleCompletionPhotoChange}
+                  />
+                </div>
+              )}
+
               {/* Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button type="submit" className="gap-2 w-full sm:w-auto" disabled={isSaving}>
-                  <Save className="h-4 w-4" />
-                  {isSaving ? "Menyimpan..." : "Simpan"}
+                <Button type="submit" className="gap-2 w-full sm:w-auto" disabled={isSaving || isUploadingPhoto}>
+                  {isSaving || isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {isUploadingPhoto ? "Mengupload foto..." : isSaving ? "Menyimpan..." : "Simpan"}
                 </Button>
                 <Button
                   type="button"

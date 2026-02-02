@@ -1,7 +1,7 @@
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Building2, Calendar, FileText, Clock, CheckCircle, User, MessageSquare } from "lucide-react";
+import { Package, Building2, Calendar, FileText, Clock, CheckCircle, User, MessageSquare, Camera } from "lucide-react";
 
 interface Complaint {
   ticket_number: string;
@@ -15,6 +15,7 @@ interface Complaint {
   description: string | null;
   reporter_name: string;
   admin_note?: string | null;
+  completion_photo_url?: string | null;
 }
 
 interface StatusSearchResultProps {
@@ -135,6 +136,21 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
               <div className="min-w-0 flex-1">
                 <p className="text-xs sm:text-sm text-muted-foreground">Catatan Admin</p>
                 <p className="font-medium text-sm sm:text-base break-words bg-primary/5 p-2 rounded-md border border-primary/10">{complaint.admin_note}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Completion Photo - shown when status is completed */}
+          {complaint.status === "completed" && complaint.completion_photo_url && (
+            <div className="flex items-start gap-2 sm:gap-3">
+              <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground">Foto Bukti Penyelesaian</p>
+                <img 
+                  src={complaint.completion_photo_url} 
+                  alt="Foto bukti penyelesaian" 
+                  className="mt-2 w-full max-w-xs rounded-lg border shadow-sm"
+                />
               </div>
             </div>
           )}

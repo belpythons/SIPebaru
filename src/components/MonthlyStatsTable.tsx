@@ -147,28 +147,22 @@ const MonthlyStatsTable = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Bulan</TableHead>
-                  <TableHead className="text-center font-semibold text-destructive">
-                    Belum Diproses
-                  </TableHead>
-                  <TableHead className="text-center font-semibold text-primary">
-                    Sedang Diproses
-                  </TableHead>
-                  <TableHead className="text-center font-semibold text-green-600">
-                    Selesai
-                  </TableHead>
-                  <TableHead className="text-center font-semibold">Total</TableHead>
+                  <TableHead className="font-semibold w-32">Status</TableHead>
+                  {monthlyData.map((row) => (
+                    <TableHead key={row.month} className="text-center font-semibold text-xs px-2">
+                      {row.monthLabel.substring(0, 3)}
+                    </TableHead>
+                  ))}
+                  <TableHead className="text-center font-semibold bg-primary/10">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {monthlyData.map((row, index) => (
-                  <TableRow 
-                    key={row.month}
-                    className={index % 2 === 0 ? "bg-background" : "bg-muted/20"}
-                  >
-                    <TableCell className="font-medium">{row.monthLabel}</TableCell>
-                    <TableCell className="text-center">
-                      <span className={`inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-full text-sm font-semibold ${
+                {/* Pending Row */}
+                <TableRow className="bg-background">
+                  <TableCell className="font-medium text-destructive">Belum Diproses</TableCell>
+                  {monthlyData.map((row) => (
+                    <TableCell key={row.month} className="text-center px-2">
+                      <span className={`inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full text-xs font-semibold ${
                         row.pending > 0 
                           ? "bg-destructive/15 text-destructive" 
                           : "bg-muted text-muted-foreground"
@@ -176,8 +170,19 @@ const MonthlyStatsTable = () => {
                         {row.pending}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <span className={`inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-full text-sm font-semibold ${
+                  ))}
+                  <TableCell className="text-center bg-primary/5">
+                    <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full text-xs font-bold bg-destructive text-destructive-foreground">
+                      {totals.pending}
+                    </span>
+                  </TableCell>
+                </TableRow>
+                {/* Processing Row */}
+                <TableRow className="bg-muted/20">
+                  <TableCell className="font-medium text-primary">Sedang Diproses</TableCell>
+                  {monthlyData.map((row) => (
+                    <TableCell key={row.month} className="text-center px-2">
+                      <span className={`inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full text-xs font-semibold ${
                         row.processing > 0 
                           ? "bg-primary/15 text-primary" 
                           : "bg-muted text-muted-foreground"
@@ -185,8 +190,19 @@ const MonthlyStatsTable = () => {
                         {row.processing}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <span className={`inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-full text-sm font-semibold ${
+                  ))}
+                  <TableCell className="text-center bg-primary/5">
+                    <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full text-xs font-bold bg-primary text-primary-foreground">
+                      {totals.processing}
+                    </span>
+                  </TableCell>
+                </TableRow>
+                {/* Completed Row */}
+                <TableRow className="bg-background">
+                  <TableCell className="font-medium text-green-600">Selesai</TableCell>
+                  {monthlyData.map((row) => (
+                    <TableCell key={row.month} className="text-center px-2">
+                      <span className={`inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full text-xs font-semibold ${
                         row.completed > 0 
                           ? "bg-green-100 text-green-700" 
                           : "bg-muted text-muted-foreground"
@@ -194,8 +210,19 @@ const MonthlyStatsTable = () => {
                         {row.completed}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <span className={`inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-full text-sm font-bold ${
+                  ))}
+                  <TableCell className="text-center bg-primary/5">
+                    <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full text-xs font-bold bg-green-600 text-white">
+                      {totals.completed}
+                    </span>
+                  </TableCell>
+                </TableRow>
+                {/* Total Row */}
+                <TableRow className="bg-primary/5 border-t-2 border-primary/20">
+                  <TableCell className="font-bold text-primary">Total</TableCell>
+                  {monthlyData.map((row) => (
+                    <TableCell key={row.month} className="text-center px-2">
+                      <span className={`inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full text-xs font-bold ${
                         row.total > 0 
                           ? "bg-foreground/10 text-foreground" 
                           : "bg-muted text-muted-foreground"
@@ -203,28 +230,9 @@ const MonthlyStatsTable = () => {
                         {row.total}
                       </span>
                     </TableCell>
-                  </TableRow>
-                ))}
-                {/* Total Row */}
-                <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                  <TableCell className="font-bold text-primary">TOTAL {selectedYear}</TableCell>
+                  ))}
                   <TableCell className="text-center">
-                    <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-full text-sm font-bold bg-destructive text-destructive-foreground">
-                      {totals.pending}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-full text-sm font-bold bg-primary text-primary-foreground">
-                      {totals.processing}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-full text-sm font-bold bg-green-600 text-white">
-                      {totals.completed}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 rounded-full text-sm font-bold bg-foreground text-background">
+                    <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 rounded-full text-xs font-bold bg-foreground text-background">
                       {totals.total}
                     </span>
                   </TableCell>

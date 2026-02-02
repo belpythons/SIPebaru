@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Upload, X, CheckCircle } from "lucide-react";
+import { Loader2, Upload, X, CheckCircle, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Combobox } from "@/components/ui/combobox";
 
 const formSchema = z.object({
   reporter_name: z
@@ -65,6 +65,8 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
+  const [departmentSearch, setDepartmentSearch] = useState("");
+  const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
@@ -79,10 +81,12 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
     },
   });
 
-  const departmentOptions = departments.map((dept) => ({
-    value: dept.name,
-    label: dept.name,
-  }));
+  const filteredDepartments = useMemo(() => {
+    if (!departmentSearch.trim()) return departments;
+    return departments.filter((dept) =>
+      dept.name.toLowerCase().includes(departmentSearch.toLowerCase())
+    );
+  }, [departments, departmentSearch]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -124,6 +128,8 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
     setPhotoFile(null);
     setPhotoPreview(null);
     setSubmissionResult(null);
+    setDepartmentSearch("");
+    setIsDepartmentOpen(false);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -246,14 +252,56 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
                 <FormItem>
                   <FormLabel>Departemen *</FormLabel>
                   <FormControl>
-                    <Combobox
-                      options={departmentOptions}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      placeholder="Pilih departemen"
-                      searchPlaceholder="Cari departemen..."
-                      emptyText="Departemen tidak ditemukan"
-                    />
+                    <div className="relative">
+                      <div
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer hover:bg-accent/50 transition-colors"
+                        onClick={() => setIsDepartmentOpen(!isDepartmentOpen)}
+                      >
+                        <span className={field.value ? "text-foreground" : "text-muted-foreground"}>
+                          {field.value || "Pilih departemen"}
+                        </span>
+                        <Search className="h-4 w-4 opacity-50" />
+                      </div>
+                      
+                      {isDepartmentOpen && (
+                        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg">
+                          <div className="p-2 border-b">
+                            <Input
+                              placeholder="Cari departemen..."
+                              value={departmentSearch}
+                              onChange={(e) => setDepartmentSearch(e.target.value)}
+                              className="h-8"
+                              autoFocus
+                            />
+                          </div>
+                          <ScrollArea className="h-[200px]">
+                            <div className="p-1">
+                              {filteredDepartments.length === 0 ? (
+                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                  Departemen tidak ditemukan
+                                </div>
+                              ) : (
+                                filteredDepartments.map((dept) => (
+                                  <div
+                                    key={dept.id}
+                                    className={`relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground ${
+                                      field.value === dept.name ? "bg-accent" : ""
+                                    }`}
+                                    onClick={() => {
+                                      field.onChange(dept.name);
+                                      setIsDepartmentOpen(false);
+                                      setDepartmentSearch("");
+                                    }}
+                                  >
+                                    {dept.name}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

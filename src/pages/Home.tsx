@@ -192,36 +192,22 @@ const Home = () => {
 
       {/* Footer */}
       <footer className="bg-card border-t mt-auto">
-        <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-5">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-2">
             {/* Brand */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary text-primary-foreground">
-                <Package className="h-3.5 w-3.5" />
+              <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary text-primary-foreground">
+                <Package className="h-3 w-3" />
               </div>
-              <span className="font-semibold text-foreground">SIPebaru</span>
+              <span className="font-medium text-foreground text-sm">SIPebaru</span>
             </div>
+            
+            <span className="hidden sm:inline text-muted-foreground">•</span>
 
             {/* Copyright */}
             <p className="text-sm text-muted-foreground text-center">
-              © {new Date().getFullYear()} SIPebaru - Sistem Informasi Pengaduan Barang Rusak
+              © {new Date().getFullYear()} Sistem Informasi Pengaduan Barang Rusak
             </p>
-
-            {/* Quick Links */}
-            <div className="flex items-center gap-4 text-sm">
-              <button 
-                onClick={() => setIsFormOpen(true)}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                Ajukan Pengaduan
-              </button>
-              <button 
-                onClick={() => navigate("/login")}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                Login Admin
-              </button>
-            </div>
           </div>
         </div>
       </footer>

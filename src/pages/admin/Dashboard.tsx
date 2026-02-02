@@ -43,7 +43,7 @@ const statusLabels = {
 const statusVariants = {
   pending: "destructive",
   processing: "default",
-  completed: "secondary",
+  completed: "success",
 } as const;
 
 const Dashboard = () => {

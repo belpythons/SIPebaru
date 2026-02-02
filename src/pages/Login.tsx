@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FileText, LogIn, ArrowLeft } from "lucide-react";
+import { Package, LogIn, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -65,83 +65,118 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-secondary flex flex-col">
-      {/* Header */}
-      <header className="bg-primary shadow-soft">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center gap-2 sm:gap-3">
-          <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-primary-foreground" />
-          <div>
-            <h1 className="text-lg sm:text-xl font-bold text-primary-foreground">SIPebaru</h1>
-            <p className="text-xs sm:text-sm text-primary-foreground/80">
-              Sistem Informasi Pengaduan Barang Rusak
-            </p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen relative flex flex-col overflow-hidden">
+      {/* Modern gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-blue-400/10 to-cyan-300/5" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-400/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/4" />
+      <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-blue-300/15 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
+      
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Header */}
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+          <div className="container max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="flex h-14 sm:h-16 items-center justify-between">
+              {/* Logo & Brand */}
+              <Link to="/" className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary text-primary-foreground">
+                  <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-bold text-base sm:text-lg text-foreground leading-tight">SIPebaru</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Sistem Informasi Pengaduan Barang Rusak</span>
+                </div>
+              </Link>
 
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-3 sm:p-4">
-        <Card className="w-full max-w-md shadow-soft animate-fade-in">
-          <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
-            <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
-              Admin Login
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              Masuk ke panel administrasi
-            </p>
-          </CardHeader>
-          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="admin@example.com"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="h-10 sm:h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  className="h-10 sm:h-11"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full gap-2 h-10 sm:h-11"
-                disabled={isLoading}
+              {/* Back Button */}
+              <Link
+                to="/"
+                className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1.5 transition-colors"
               >
-                <LogIn className="h-4 w-4" />
-                {isLoading ? "Memproses..." : "Login"}
-              </Button>
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Kembali ke Beranda</span>
+              </Link>
+            </div>
+          </div>
+        </header>
 
-              <div className="text-center">
-                <Link
-                  to="/"
-                  className="text-xs sm:text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1"
-                >
-                  <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Kembali ke Halaman Utama
-                </Link>
+        {/* Main Content */}
+        <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
+          <Card className="w-full max-w-md shadow-lg border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4 sm:pb-6 px-6 sm:px-8 pt-6 sm:pt-8">
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-4 mx-auto">
+                <LogIn className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      </main>
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
+                Admin Login
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">
+                Masuk ke panel administrasi SIPebaru
+              </p>
+            </CardHeader>
+            <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="admin@example.com"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="h-11 sm:h-12 bg-background"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                    className="h-11 sm:h-12 bg-background"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full gap-2 h-11 sm:h-12 text-base shadow-lg hover:shadow-xl transition-shadow"
+                  disabled={isLoading}
+                >
+                  <LogIn className="h-4 w-4" />
+                  {isLoading ? "Memproses..." : "Login"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </main>
+
+        {/* Footer */}
+        <footer className="bg-card/50 backdrop-blur-sm border-t mt-auto">
+          <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-5">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary text-primary-foreground">
+                  <Package className="h-3 w-3" />
+                </div>
+                <span className="font-medium text-foreground text-sm">SIPebaru</span>
+              </div>
+              
+              <span className="hidden sm:inline text-muted-foreground">•</span>
+
+              <p className="text-sm text-muted-foreground text-center">
+                © {new Date().getFullYear()} Sistem Informasi Pengaduan Barang Rusak
+              </p>
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 };

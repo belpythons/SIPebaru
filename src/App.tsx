@@ -13,6 +13,7 @@ import Reports from "./pages/admin/Reports";
 import Accounts from "./pages/admin/Accounts";
 import Departments from "./pages/admin/Departments";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -26,12 +27,12 @@ const App = () => (
           <Route path="/" element={<Home />} />
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<Dashboard />} />
-          <Route path="/admin/complaints" element={<Complaints />} />
-          <Route path="/admin/complaints/:id" element={<EditComplaint />} />
-          <Route path="/admin/reports" element={<Reports />} />
-          <Route path="/admin/accounts" element={<Accounts />} />
-          <Route path="/admin/departments" element={<Departments />} />
+          <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/admin/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
+          <Route path="/admin/complaints/:id" element={<ProtectedRoute><EditComplaint /></ProtectedRoute>} />
+          <Route path="/admin/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+          <Route path="/admin/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+          <Route path="/admin/departments" element={<ProtectedRoute><Departments /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

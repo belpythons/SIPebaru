@@ -71,7 +71,13 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/10 via-primary/5 to-white flex flex-col">
+    <div className="min-h-screen relative flex flex-col overflow-hidden">
+      {/* Modern gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-blue-400/10 to-cyan-300/5" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-400/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/4" />
+      <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-blue-300/15 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
+      <div className="relative z-10 flex flex-col min-h-screen">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container max-w-6xl mx-auto px-4 sm:px-6">
@@ -214,6 +220,7 @@ const Home = () => {
 
       {/* Complaint Form Dialog */}
       <ComplaintFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} />
+      </div>
     </div>
   );
 };

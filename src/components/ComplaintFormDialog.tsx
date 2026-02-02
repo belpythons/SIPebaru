@@ -3,23 +3,18 @@ import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, CalendarIcon, Upload, X } from "lucide-react";
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { Loader2, Upload, X, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -29,18 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 
 const formSchema = z.object({
   reporter_name: z
@@ -51,7 +35,7 @@ const formSchema = z.object({
   department: z
     .string()
     .trim()
-    .min(1, "Departemen wajib diisi")
+    .min(1, "Departemen wajib dipilih")
     .max(120, "Departemen maksimal 120 karakter"),
   kompartemen: z
     .string()
@@ -63,31 +47,30 @@ const formSchema = z.object({
     .trim()
     .min(1, "Nama barang wajib diisi")
     .max(200, "Nama barang maksimal 200 karakter"),
-  quantity: z
-    .number()
-    .min(1, "Jumlah minimal 1")
-    .max(100000, "Jumlah maksimal 100000"),
   description: z
     .string()
-    .max(2000, "Keterangan maksimal 2000 karakter")
-    .optional(),
-  reported_at: z.date({ required_error: "Tanggal lapor wajib diisi" }),
-  status: z.enum(["pending", "processing", "completed"]),
+    .trim()
+    .min(1, "Deskripsi kerusakan wajib diisi")
+    .max(2000, "Deskripsi maksimal 2000 karakter"),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-interface AddComplaintDialogProps {
-  onSuccess: () => void;
+interface ComplaintFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
-  const [open, setOpen] = useState(false);
+interface SubmissionResult {
+  ticketNumber: string;
+}
+
+export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
 
-  // Fetch departments from database
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
@@ -101,6 +84,11 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
     },
   });
 
+  const departmentOptions = departments.map((dept) => ({
+    value: dept.name,
+    label: dept.name,
+  }));
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -108,10 +96,7 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
       department: "",
       kompartemen: "",
       item_name: "",
-      quantity: 1,
       description: "",
-      reported_at: new Date(),
-      status: "pending",
     },
   });
 
@@ -138,6 +123,13 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
   const removePhoto = () => {
     setPhotoFile(null);
     setPhotoPreview(null);
+  };
+
+  const resetForm = () => {
+    form.reset();
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setSubmissionResult(null);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -176,31 +168,21 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
         department: data.department.trim(),
         kompartemen: data.kompartemen?.trim() || null,
         item_name: data.item_name.trim(),
-        quantity: data.quantity,
-        description: data.description?.trim() || null,
-        reported_at: data.reported_at.toISOString(),
-        status: data.status,
-        processed_at: data.status === "completed" ? new Date().toISOString() : null,
+        quantity: 1,
+        description: data.description.trim(),
+        reported_at: new Date().toISOString(),
+        status: "pending",
         photo_url: photoUrl,
       });
 
       if (error) throw error;
 
-      toast({
-        title: "Berhasil",
-        description: "Pengaduan baru berhasil ditambahkan",
-      });
-
-      form.reset();
-      setPhotoFile(null);
-      setPhotoPreview(null);
-      setOpen(false);
-      onSuccess();
+      setSubmissionResult({ ticketNumber: ticketData });
     } catch (error: any) {
-      console.error("Error adding complaint:", error);
+      console.error("Error submitting complaint:", error);
       toast({
         title: "Gagal",
-        description: error.message || "Gagal menambahkan pengaduan",
+        description: error.message || "Gagal mengirim pengaduan",
         variant: "destructive",
       });
     } finally {
@@ -208,17 +190,45 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
     }
   };
 
+  const handleClose = () => {
+    resetForm();
+    onOpenChange(false);
+  };
+
+  if (submissionResult) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md">
+          <div className="flex flex-col items-center text-center py-6">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Pengaduan Berhasil Dikirim!</h2>
+            <p className="text-muted-foreground mb-4">
+              Nomor pengaduan Anda:
+            </p>
+            <div className="bg-muted px-6 py-3 rounded-lg mb-6">
+              <span className="text-2xl font-bold text-primary">
+                {submissionResult.ticketNumber}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              Simpan nomor ini untuk mengecek status pengaduan Anda.
+            </p>
+            <Button onClick={handleClose} className="w-full">
+              Tutup
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Tambah Pengaduan
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Tambah Pengaduan Baru</DialogTitle>
+          <DialogTitle>Ajukan Pengaduan Barang Rusak</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -227,9 +237,9 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
               name="reporter_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nama Pelapor</FormLabel>
+                  <FormLabel>Nama Pelapor *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan nama pelapor" {...field} />
+                    <Input placeholder="Masukkan nama lengkap Anda" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -241,21 +251,17 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
               name="department"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Departemen</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih departemen" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.name}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Departemen *</FormLabel>
+                  <FormControl>
+                    <Combobox
+                      options={departmentOptions}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Pilih departemen"
+                      searchPlaceholder="Cari departemen..."
+                      emptyText="Departemen tidak ditemukan"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -266,21 +272,17 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
               name="kompartemen"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Kompartemen (Opsional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih kompartemen" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.name}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Kompartemen</FormLabel>
+                  <FormControl>
+                    <Combobox
+                      options={departmentOptions}
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                      placeholder="Pilih kompartemen (opsional)"
+                      searchPlaceholder="Cari kompartemen..."
+                      emptyText="Kompartemen tidak ditemukan"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -291,29 +293,9 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
               name="item_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nama Barang</FormLabel>
+                  <FormLabel>Nama Barang *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan nama barang" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Jumlah</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={100000}
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                    />
+                    <Input placeholder="Masukkan nama barang yang rusak" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -325,12 +307,12 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Keterangan (Opsional)</FormLabel>
+                  <FormLabel>Deskripsi Kerusakan *</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Masukkan keterangan kerusakan"
+                      placeholder="Jelaskan kondisi kerusakan barang secara detail"
                       className="resize-none"
-                      rows={3}
+                      rows={4}
                       {...field}
                     />
                   </FormControl>
@@ -339,72 +321,8 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="reported_at"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Tanggal Lapor</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "dd MMMM yyyy", { locale: id })
-                          ) : (
-                            <span>Pilih tanggal</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="pending">Belum Diproses</SelectItem>
-                      <SelectItem value="processing">Sedang Diproses</SelectItem>
-                      <SelectItem value="completed">Selesai</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="space-y-2">
-              <Label>Upload Foto Barang Rusak (Opsional)</Label>
+              <Label>Upload Foto Barang Rusak</Label>
               {photoPreview ? (
                 <div className="relative">
                   <img
@@ -440,18 +358,29 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
               )}
             </div>
 
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>Tanggal Laporan:</strong>{" "}
+                {new Date().toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={handleClose}
                 disabled={isSubmitting}
               >
                 Batal
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Simpan
+                Kirim Pengaduan
               </Button>
             </div>
           </form>
@@ -459,6 +388,4 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
       </DialogContent>
     </Dialog>
   );
-};
-
-export default AddComplaintDialog;
+}

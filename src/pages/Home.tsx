@@ -15,6 +15,8 @@ interface ComplaintResult {
   kompartemen: string | null;
   status: "pending" | "processing" | "completed";
   reported_at: string;
+  processed_at: string | null;
+  completed_at: string | null;
   description: string | null;
 }
 
@@ -43,7 +45,7 @@ const Home = () => {
     try {
       const { data, error } = await supabase
         .from("complaints")
-        .select("ticket_number, item_name, department, kompartemen, status, reported_at, description")
+        .select("ticket_number, item_name, department, kompartemen, status, reported_at, processed_at, completed_at, description")
         .eq("ticket_number", searchQuery.trim().toUpperCase())
         .maybeSingle();
 

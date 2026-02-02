@@ -192,78 +192,36 @@ const Home = () => {
 
       {/* Footer */}
       <footer className="bg-card border-t mt-auto">
-        <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             {/* Brand */}
-            <div className="sm:col-span-2 lg:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
-                  <Package className="h-4 w-4" />
-                </div>
-                <span className="font-bold text-lg text-foreground">SIPebaru</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary text-primary-foreground">
+                <Package className="h-3.5 w-3.5" />
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Sistem Informasi Pengaduan Barang Rusak untuk memudahkan pelaporan dan tracking status perbaikan barang.
-              </p>
+              <span className="font-semibold text-foreground">SIPebaru</span>
             </div>
+
+            {/* Copyright */}
+            <p className="text-sm text-muted-foreground text-center">
+              © {new Date().getFullYear()} SIPebaru - Sistem Informasi Pengaduan Barang Rusak
+            </p>
 
             {/* Quick Links */}
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Tautan Cepat</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <button 
-                    onClick={() => setIsFormOpen(true)}
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    Ajukan Pengaduan
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => document.querySelector('input')?.focus()}
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    Cek Status Pengaduan
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate("/login")}
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    Login Admin
-                  </button>
-                </li>
-              </ul>
+            <div className="flex items-center gap-4 text-sm">
+              <button 
+                onClick={() => setIsFormOpen(true)}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Ajukan Pengaduan
+              </button>
+              <button 
+                onClick={() => navigate("/login")}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Login Admin
+              </button>
             </div>
-
-            {/* Information */}
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Informasi</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Jam Operasional:</li>
-                <li className="pl-2">Senin - Jumat: 08:00 - 16:00</li>
-                <li className="pl-2">Sabtu: 08:00 - 12:00</li>
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Kontak</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Email: support@sipebaru.id</li>
-                <li>Telepon: (021) 123-4567</li>
-                <li>WhatsApp: 0812-3456-7890</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Copyright */}
-          <div className="border-t mt-8 pt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} SIPebaru - Sistem Informasi Pengaduan Barang Rusak. All rights reserved.
-            </p>
           </div>
         </div>
       </footer>

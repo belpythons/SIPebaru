@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Edit, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Edit, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import AddComplaintDialog from "@/components/AddComplaintDialog";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Complaint {
   id: string;
@@ -52,6 +63,9 @@ const Complaints = () => {
   const [activeTab, setActiveTab] = useState<"pending" | "processing" | "completed">("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [complaintToDelete, setComplaintToDelete] = useState<Complaint | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchComplaints = useCallback(async () => {
     try {
@@ -85,6 +99,35 @@ const Complaints = () => {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const handleDeleteClick = (complaint: Complaint) => {
+    setComplaintToDelete(complaint);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!complaintToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("complaints")
+        .delete()
+        .eq("id", complaintToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Pengaduan berhasil dihapus");
+      fetchComplaints();
+    } catch (error) {
+      console.error("Error deleting complaint:", error);
+      toast.error("Gagal menghapus pengaduan");
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setComplaintToDelete(null);
+    }
   };
 
   const filteredComplaints = complaints
@@ -169,15 +212,25 @@ const Complaints = () => {
           <p className="font-medium">{complaint.processed_at ? formatDate(complaint.processed_at) : "-"}</p>
         </div>
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
-        className="w-full gap-1"
-      >
-        <Edit className="h-4 w-4" />
-        Edit
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+          className="flex-1 gap-1"
+        >
+          <Edit className="h-4 w-4" />
+          Edit
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => handleDeleteClick(complaint)}
+          className="gap-1"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 
@@ -224,15 +277,25 @@ const Complaints = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
-                      className="gap-1"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </Button>
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+                        className="gap-1"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteClick(complaint)}
+                        className="gap-1"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -378,6 +441,38 @@ const Complaints = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus pengaduan{" "}
+              <span className="font-semibold">{complaintToDelete?.ticket_number}</span>?
+              <br />
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                "Hapus"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };

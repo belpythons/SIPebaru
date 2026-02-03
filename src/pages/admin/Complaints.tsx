@@ -60,7 +60,7 @@ const Complaints = () => {
   const navigate = useNavigate();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"pending" | "processing" | "completed">("pending");
+  const [activeTab, setActiveTab] = useState<"all" | "pending" | "processing" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -131,7 +131,7 @@ const Complaints = () => {
   };
 
   const filteredComplaints = complaints
-    .filter((c) => c.status === activeTab)
+    .filter((c) => activeTab === "all" ? true : c.status === activeTab)
     .filter((c) => {
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
@@ -354,7 +354,13 @@ const Complaints = () => {
               value={activeTab}
               onValueChange={(v) => setActiveTab(v as typeof activeTab)}
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="all" className="text-xs sm:text-sm px-2 sm:px-4">
+                  Semua
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {complaints.length}
+                  </Badge>
+                </TabsTrigger>
                 <TabsTrigger value="pending" className="text-xs sm:text-sm px-2 sm:px-4">
                   <span className="hidden sm:inline">Belum Diproses</span>
                   <span className="sm:hidden">Pending</span>

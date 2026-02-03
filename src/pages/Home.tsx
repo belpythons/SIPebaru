@@ -46,10 +46,23 @@ const Home = () => {
     setSearchError(null);
 
     try {
+      // Normalize search query - support searching by sequence number only
+      const query = searchQuery.trim().toUpperCase();
+      
+      // If query looks like just a sequence number (e.g., "0001" or "1"), search with pattern
+      let searchPattern = query;
+      if (/^\d+$/.test(query)) {
+        // Pad to 4 digits if just numbers
+        searchPattern = query.padStart(4, '0') + '/ADKOR/%';
+      } else if (/^\d+\/ADKOR$/i.test(query)) {
+        // If query is like "0001/ADKOR", add wildcard
+        searchPattern = query + '/%';
+      }
+      
       const { data, error } = await supabase
         .from("complaints")
         .select("ticket_number, item_name, department, kompartemen, status, reported_at, processed_at, completed_at, description, reporter_name, admin_note, completion_photo_url")
-        .eq("ticket_number", searchQuery.trim().toUpperCase())
+        .ilike("ticket_number", searchPattern.includes('%') ? searchPattern : query)
         .maybeSingle();
 
       if (error) throw error;

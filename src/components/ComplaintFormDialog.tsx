@@ -71,31 +71,18 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   const [nextTicketNumber, setNextTicketNumber] = useState<string | null>(null);
   const [isLoadingTicket, setIsLoadingTicket] = useState(false);
 
-  // Fetch next ticket number when dialog opens
+  // Fetch next ticket number when dialog opens using the RPC function
   useEffect(() => {
     const fetchNextTicketNumber = async () => {
       if (open && !submissionResult) {
         setIsLoadingTicket(true);
         try {
-          // Get current max ticket number to preview next one
-          const { data, error } = await supabase
-            .from("complaints")
-            .select("ticket_number")
-            .order("created_at", { ascending: false })
-            .limit(1);
+          // Call the generate_ticket_number function to preview the next number
+          const { data, error } = await supabase.rpc("generate_ticket_number");
           
           if (error) throw error;
           
-          let nextNumber = 1;
-          if (data && data.length > 0) {
-            const lastTicket = data[0].ticket_number;
-            const match = lastTicket.match(/BR-(\d+)/);
-            if (match) {
-              nextNumber = parseInt(match[1], 10) + 1;
-            }
-          }
-          
-          setNextTicketNumber(`BR-${String(nextNumber).padStart(4, '0')}`);
+          setNextTicketNumber(data);
         } catch (error) {
           console.error("Error fetching next ticket number:", error);
           setNextTicketNumber(null);
@@ -296,7 +283,7 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
             </div>
           ) : (
             <span className="text-xl sm:text-2xl font-bold text-primary tracking-wide">
-              {nextTicketNumber || "BR-XXXX"}
+              {nextTicketNumber || "XXXX/ADKOR/Bln/Thn"}
             </span>
           )}
         </div>

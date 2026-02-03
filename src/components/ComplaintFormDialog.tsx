@@ -261,8 +261,8 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
               </div>
             </div>
 
-            <div className="w-full bg-info/10 border border-info/30 rounded-lg p-3 mb-5 text-left">
-              <p className="text-xs sm:text-sm text-info-foreground">
+            <div className="w-full bg-amber-100 border border-amber-400 rounded-lg p-3 mb-5 text-left">
+              <p className="text-xs sm:text-sm text-amber-900 font-medium">
                 <strong>📌 Penting:</strong> Simpan nomor pengaduan ini untuk mengecek status pengaduan Anda kapan saja melalui menu "Cek Status Pengaduan".
               </p>
             </div>

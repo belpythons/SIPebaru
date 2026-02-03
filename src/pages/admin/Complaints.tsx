@@ -1,13 +1,18 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Edit, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { Loader2, Edit, Search, ChevronLeft, ChevronRight, Trash2, CalendarIcon, X } from "lucide-react";
 import AddComplaintDialog from "@/components/AddComplaintDialog";
 import AdminLayout from "@/components/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -62,6 +67,7 @@ const Complaints = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "processing" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [complaintToDelete, setComplaintToDelete] = useState<Complaint | null>(null);
@@ -88,10 +94,10 @@ const Complaints = () => {
     fetchComplaints();
   }, [fetchComplaints]);
 
-  // Reset page when tab or search changes
+  // Reset page when tab, search, or date filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, filterDate]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -140,6 +146,15 @@ const Complaints = () => {
         c.reporter_name.toLowerCase().includes(query) ||
         c.department.toLowerCase().includes(query) ||
         c.item_name.toLowerCase().includes(query)
+      );
+    })
+    .filter((c) => {
+      if (!filterDate) return true;
+      const reportedDate = new Date(c.reported_at);
+      return (
+        reportedDate.getFullYear() === filterDate.getFullYear() &&
+        reportedDate.getMonth() === filterDate.getMonth() &&
+        reportedDate.getDate() === filterDate.getDate()
       );
     });
 
@@ -335,15 +350,49 @@ const Complaints = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-foreground">Data Pengaduan</h1>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <div className="relative w-full sm:w-80">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cari no. pengaduan, nama, departemen..."
+                placeholder="Cari no. pengaduan, nama..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full sm:w-auto justify-start text-left font-normal gap-2",
+                    filterDate && "text-foreground"
+                  )}
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  {filterDate ? format(filterDate, "d MMM yyyy", { locale: id }) : "Filter Tanggal"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={filterDate}
+                  onSelect={setFilterDate}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            {filterDate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setFilterDate(undefined)}
+                className="shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             <AddComplaintDialog onSuccess={fetchComplaints} />
           </div>
         </div>

@@ -225,36 +225,36 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   if (submissionResult) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-[90vw] sm:max-w-md mx-auto">
-          <div className="flex flex-col items-center text-center py-4 sm:py-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-success/20 flex items-center justify-center mb-4 sm:mb-5 animate-fade-in">
-              <CheckCircle className="h-9 w-9 sm:h-11 sm:w-11 text-success" />
+        <DialogContent className="max-w-sm mx-auto p-0 overflow-hidden">
+          <div className="flex flex-col items-center text-center p-6">
+            {/* Success Icon */}
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <CheckCircle className="h-7 w-7 text-green-600" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-              Pengaduan Diterima!
+            
+            {/* Title */}
+            <h2 className="text-lg font-semibold text-foreground mb-1">
+              Pengaduan Diterima
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground mb-4">
-              Pengaduan Anda telah berhasil diajukan dan akan segera diproses oleh tim kami.
+            <p className="text-sm text-muted-foreground mb-5">
+              Pengaduan Anda akan segera diproses
             </p>
             
-            <div className="w-full bg-muted/50 border border-border rounded-xl p-4 sm:p-5 mb-4 sm:mb-5">
-              <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-                Nomor Pengaduan Anda
+            {/* Ticket Number */}
+            <div className="w-full bg-muted/40 rounded-lg p-4 mb-4">
+              <p className="text-xs text-muted-foreground mb-2">Nomor Pengaduan</p>
+              <p className="text-lg font-bold text-primary break-all">
+                {submissionResult.ticketNumber}
               </p>
-              <div className="bg-background border-2 border-primary/30 px-4 sm:px-6 py-3 sm:py-4 rounded-lg">
-                <span className="text-2xl sm:text-3xl font-bold text-primary tracking-wide">
-                  {submissionResult.ticketNumber}
-                </span>
-              </div>
             </div>
 
-            <div className="w-full bg-amber-100 border border-amber-400 rounded-lg p-3 mb-5 text-left">
-              <p className="text-xs sm:text-sm text-amber-900 font-medium">
-                <strong>📌 Penting:</strong> Simpan nomor pengaduan ini untuk mengecek status pengaduan Anda kapan saja melalui menu "Cek Status Pengaduan".
-              </p>
-            </div>
+            {/* Note */}
+            <p className="text-xs text-muted-foreground mb-5">
+              Simpan nomor ini untuk mengecek status pengaduan Anda
+            </p>
             
-            <Button onClick={handleClose} className="w-full" size="lg">
+            {/* Close Button */}
+            <Button onClick={handleClose} className="w-full">
               Tutup
             </Button>
           </div>

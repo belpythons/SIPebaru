@@ -168,7 +168,23 @@ const Home = () => {
           </div>
 
           {/* Search Result */}
-          {searchResult && <StatusSearchResult complaint={searchResult} />}
+          {searchResult && (
+            <div className="space-y-4">
+              <StatusSearchResult complaint={searchResult} />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchResult(null);
+                  setSearchQuery("");
+                  setSearchError(null);
+                }}
+                className="gap-2"
+              >
+                <Search className="h-4 w-4" />
+                Cek Status Lainnya
+              </Button>
+            </div>
+          )}
 
           {/* Divider */}
           <div className="relative py-3 sm:py-4">

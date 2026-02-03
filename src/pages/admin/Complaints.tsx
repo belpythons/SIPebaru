@@ -371,7 +371,7 @@ const Complaints = () => {
                 <TabsTrigger value="processing" className="text-xs sm:text-sm px-2 sm:px-4">
                   <span className="hidden sm:inline">Sedang Diproses</span>
                   <span className="sm:hidden">Proses</span>
-                  <Badge variant="default" className="ml-1 text-xs">
+                  <Badge variant="warning" className="ml-1 text-xs">
                     {complaints.filter((c) => c.status === "processing").length}
                   </Badge>
                 </TabsTrigger>

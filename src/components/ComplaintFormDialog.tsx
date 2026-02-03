@@ -225,36 +225,40 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   if (submissionResult) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-[92vw] sm:max-w-sm mx-auto p-0 overflow-hidden">
-          <div className="flex flex-col items-center text-center p-4 sm:p-6">
+        <DialogContent className="max-w-[92vw] sm:max-w-md mx-auto p-0 overflow-hidden">
+          <div className="flex flex-col items-center text-center p-5 sm:p-6">
             {/* Success Icon */}
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-green-100 flex items-center justify-center mb-3 sm:mb-4">
-              <CheckCircle className="h-6 w-6 sm:h-7 sm:w-7 text-green-600" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-green-100 flex items-center justify-center mb-4 animate-fade-in">
+              <CheckCircle className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
             </div>
             
             {/* Title */}
-            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-1">
-              Pengaduan Diterima
+            <h2 className="text-lg sm:text-xl font-bold text-foreground mb-1">
+              Pengaduan Diterima!
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-5">
-              Pengaduan Anda akan segera diproses
+            <p className="text-sm text-muted-foreground mb-5">
+              Pengaduan Anda telah berhasil diajukan
             </p>
             
             {/* Ticket Number */}
-            <div className="w-full bg-muted/40 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
-              <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Nomor Pengaduan</p>
-              <p className="text-sm sm:text-lg font-bold text-primary break-all leading-relaxed">
-                {submissionResult.ticketNumber}
-              </p>
+            <div className="w-full bg-muted/50 border border-border rounded-xl p-4 mb-4">
+              <p className="text-xs text-muted-foreground mb-2">Nomor Pengaduan Anda</p>
+              <div className="bg-background border-2 border-primary/30 px-4 py-3 rounded-lg">
+                <p className="text-lg sm:text-xl font-bold text-primary break-all">
+                  {submissionResult.ticketNumber}
+                </p>
+              </div>
             </div>
 
-            {/* Note */}
-            <p className="text-[10px] sm:text-xs text-muted-foreground mb-4 sm:mb-5 px-2">
-              Simpan nomor ini untuk mengecek status pengaduan Anda
-            </p>
+            {/* Important Note */}
+            <div className="w-full bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 text-left">
+              <p className="text-xs sm:text-sm text-amber-800">
+                <span className="font-semibold">📌 Penting:</span> Simpan nomor pengaduan ini untuk mengecek status pengaduan Anda kapan saja.
+              </p>
+            </div>
             
             {/* Close Button */}
-            <Button onClick={handleClose} className="w-full h-9 sm:h-10 text-sm">
+            <Button onClick={handleClose} className="w-full h-10 sm:h-11">
               Tutup
             </Button>
           </div>

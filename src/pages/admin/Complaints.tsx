@@ -357,7 +357,7 @@ const Complaints = () => {
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="all" className="text-xs sm:text-sm px-2 sm:px-4">
                   Semua
-                  <Badge variant="secondary" className="ml-1 text-xs">
+                  <Badge variant="success" className="ml-1 text-xs">
                     {complaints.length}
                   </Badge>
                 </TabsTrigger>

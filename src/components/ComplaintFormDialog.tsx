@@ -225,36 +225,36 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   if (submissionResult) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-sm mx-auto p-0 overflow-hidden">
-          <div className="flex flex-col items-center text-center p-6">
+        <DialogContent className="max-w-[92vw] sm:max-w-sm mx-auto p-0 overflow-hidden">
+          <div className="flex flex-col items-center text-center p-4 sm:p-6">
             {/* Success Icon */}
-            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-4">
-              <CheckCircle className="h-7 w-7 text-green-600" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-green-100 flex items-center justify-center mb-3 sm:mb-4">
+              <CheckCircle className="h-6 w-6 sm:h-7 sm:w-7 text-green-600" />
             </div>
             
             {/* Title */}
-            <h2 className="text-lg font-semibold text-foreground mb-1">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-1">
               Pengaduan Diterima
             </h2>
-            <p className="text-sm text-muted-foreground mb-5">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-5">
               Pengaduan Anda akan segera diproses
             </p>
             
             {/* Ticket Number */}
-            <div className="w-full bg-muted/40 rounded-lg p-4 mb-4">
-              <p className="text-xs text-muted-foreground mb-2">Nomor Pengaduan</p>
-              <p className="text-lg font-bold text-primary break-all">
+            <div className="w-full bg-muted/40 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Nomor Pengaduan</p>
+              <p className="text-sm sm:text-lg font-bold text-primary break-all leading-relaxed">
                 {submissionResult.ticketNumber}
               </p>
             </div>
 
             {/* Note */}
-            <p className="text-xs text-muted-foreground mb-5">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-4 sm:mb-5 px-2">
               Simpan nomor ini untuk mengecek status pengaduan Anda
             </p>
             
             {/* Close Button */}
-            <Button onClick={handleClose} className="w-full">
+            <Button onClick={handleClose} className="w-full h-9 sm:h-10 text-sm">
               Tutup
             </Button>
           </div>

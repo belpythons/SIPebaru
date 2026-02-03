@@ -28,7 +28,7 @@ const chartConfig = {
   },
   completed: {
     label: "Selesai",
-    color: "hsl(var(--muted-foreground))",
+    color: "hsl(var(--success))",
   },
 } satisfies ChartConfig;
 
@@ -158,7 +158,7 @@ const ComplaintBarChart = () => {
               <span className="text-xs sm:text-sm text-muted-foreground">Sedang Diproses</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm bg-muted-foreground" />
+              <div className="w-3 h-3 rounded-sm bg-success" />
               <span className="text-xs sm:text-sm text-muted-foreground">Selesai</span>
             </div>
           </div>

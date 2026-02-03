@@ -1,18 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, FileText, LogIn, Loader2, Package, CalendarIcon } from "lucide-react";
+import { Search, FileText, LogIn, Loader2, Package } from "lucide-react";
 import { ComplaintFormDialog } from "@/components/ComplaintFormDialog";
 import { StatusSearchResult } from "@/components/StatusSearchResult";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 
 interface ComplaintResult {
   ticket_number: string;
@@ -32,15 +26,13 @@ interface ComplaintResult {
 const Home = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchDate, setSearchDate] = useState<Date | undefined>(undefined);
-  const [searchType, setSearchType] = useState<"ticket" | "date">("ticket");
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<ComplaintResult[]>([]);
+  const [searchResult, setSearchResult] = useState<ComplaintResult | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const handleSearch = async () => {
-    if (searchType === "ticket" && !searchQuery.trim()) {
+    if (!searchQuery.trim()) {
       toast({
         title: "Masukkan Nomor Pengaduan",
         description: "Silakan masukkan nomor pengaduan untuk mencari status",
@@ -49,51 +41,23 @@ const Home = () => {
       return;
     }
 
-    if (searchType === "date" && !searchDate) {
-      toast({
-        title: "Pilih Tanggal",
-        description: "Silakan pilih tanggal lapor untuk mencari pengaduan",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSearching(true);
-    setSearchResults([]);
+    setSearchResult(null);
     setSearchError(null);
 
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from("complaints")
-        .select("ticket_number, item_name, department, kompartemen, status, reported_at, processed_at, completed_at, description, reporter_name, admin_note, completion_photo_url");
-
-      if (searchType === "ticket") {
-        query = query.eq("ticket_number", searchQuery.trim().toUpperCase());
-      } else {
-        // Search by date - get all complaints from that date
-        const startOfDay = new Date(searchDate!);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(searchDate!);
-        endOfDay.setHours(23, 59, 59, 999);
-        
-        query = query
-          .gte("reported_at", startOfDay.toISOString())
-          .lte("reported_at", endOfDay.toISOString())
-          .order("reported_at", { ascending: false });
-      }
-
-      const { data, error } = await query;
+        .select("ticket_number, item_name, department, kompartemen, status, reported_at, processed_at, completed_at, description, reporter_name, admin_note, completion_photo_url")
+        .eq("ticket_number", searchQuery.trim().toUpperCase())
+        .maybeSingle();
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        setSearchResults(data as ComplaintResult[]);
+      if (data) {
+        setSearchResult(data as ComplaintResult);
       } else {
-        setSearchError(
-          searchType === "ticket" 
-            ? "Pengaduan dengan nomor tersebut tidak ditemukan" 
-            : `Tidak ada pengaduan pada tanggal ${format(searchDate!, "d MMMM yyyy", { locale: id })}`
-        );
+        setSearchError("Pengaduan dengan nomor tersebut tidak ditemukan");
       }
     } catch (error: any) {
       console.error("Error searching complaint:", error);
@@ -104,9 +68,8 @@ const Home = () => {
   };
 
   const handleReset = () => {
-    setSearchResults([]);
+    setSearchResult(null);
     setSearchQuery("");
-    setSearchDate(undefined);
     setSearchError(null);
   };
 
@@ -182,49 +145,14 @@ const Home = () => {
               Cek Status Pengaduan Anda
             </h2>
             
-            {/* Search Type Tabs */}
-            <Tabs value={searchType} onValueChange={(v) => setSearchType(v as "ticket" | "date")} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="ticket">Nomor Tiket</TabsTrigger>
-                <TabsTrigger value="date">Tanggal Lapor</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
             <div className="flex flex-col sm:flex-row gap-2">
-              {searchType === "ticket" ? (
-                <Input
-                  placeholder="Masukkan Nomor Pengaduan (contoh: BR-0001)"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="text-center text-base sm:text-lg h-11 sm:h-12"
-                />
-              ) : (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal h-11 sm:h-12 text-base sm:text-lg",
-                        !searchDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {searchDate ? format(searchDate, "d MMMM yyyy", { locale: id }) : <span>Pilih tanggal lapor</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="center">
-                    <Calendar
-                      mode="single"
-                      selected={searchDate}
-                      onSelect={setSearchDate}
-                      disabled={(date) => date > new Date()}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
+              <Input
+                placeholder="Masukkan Nomor Pengaduan (contoh: 0001/ADKOR/Feb/2026)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="text-center text-base sm:text-lg h-11 sm:h-12"
+              />
               <Button
                 onClick={handleSearch}
                 disabled={isSearching}
@@ -246,17 +174,10 @@ const Home = () => {
             )}
           </div>
 
-          {/* Search Results */}
-          {searchResults.length > 0 && (
+          {/* Search Result */}
+          {searchResult && (
             <div className="space-y-4">
-              {searchType === "date" && (
-                <p className="text-sm text-muted-foreground">
-                  Ditemukan {searchResults.length} pengaduan pada tanggal {format(searchDate!, "d MMMM yyyy", { locale: id })}
-                </p>
-              )}
-              {searchResults.map((result) => (
-                <StatusSearchResult key={result.ticket_number} complaint={result} />
-              ))}
+              <StatusSearchResult complaint={searchResult} />
               <Button
                 variant="outline"
                 onClick={handleReset}

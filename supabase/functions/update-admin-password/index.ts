@@ -1,11 +1,73 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Validation helpers
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function validateUserId(userId: string): { valid: boolean; error?: string } {
+  if (!userId || typeof userId !== "string") {
+    return { valid: false, error: "User ID is required" };
+  }
+  if (!uuidRegex.test(userId)) {
+    return { valid: false, error: "Invalid user ID format" };
+  }
+  return { valid: true };
+}
+
+function validatePassword(password: string): { valid: boolean; error?: string } {
+  if (!password || typeof password !== "string") {
+    return { valid: false, error: "Password is required" };
+  }
+  if (password.length < 6) {
+    return { valid: false, error: "Password must be at least 6 characters" };
+  }
+  if (password.length > 128) {
+    return { valid: false, error: "Password must be less than 128 characters" };
+  }
+  return { valid: true };
+}
+
+// Safe error mapping to prevent information leakage
+function mapErrorToSafeMessage(error: Error | { message?: string }): string {
+  const message = error?.message?.toLowerCase() || "";
+  
+  if (message.includes("user not found") || message.includes("not found")) {
+    return "User not found";
+  }
+  if (message.includes("password")) {
+    return "Password does not meet requirements";
+  }
+  
+  // Return generic message for all other errors
+  return "Failed to update password";
+}
+
+// Get allowed origins for CORS
+function getAllowedOrigin(origin: string | null): string {
+  const allowedOrigins = [
+    Deno.env.get("SITE_URL"),
+    "https://id-preview--3407bea8-a3a5-43b5-b1e9-e4a4ec9a4e04.lovable.app",
+    "http://localhost:5173",
+    "http://localhost:8080",
+  ].filter(Boolean);
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    return origin;
+  }
+  return allowedOrigins[0] || "*";
+}
+
+function getCorsHeaders(origin: string | null) {
+  return {
+    "Access-Control-Allow-Origin": getAllowedOrigin(origin),
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Credentials": "true",
+  };
+}
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,7 +78,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: "No authorization header" }),
+        JSON.stringify({ error: "Authentication required" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -35,7 +97,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
+        JSON.stringify({ error: "Authentication required" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -50,25 +112,37 @@ Deno.serve(async (req) => {
 
     if (roleError || !roleData) {
       return new Response(
-        JSON.stringify({ error: "Only admins can update passwords" }),
+        JSON.stringify({ error: "Insufficient permissions" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Parse the request body
-    const { target_user_id, password } = await req.json();
-
-    if (!target_user_id || !password) {
+    let body: { target_user_id?: string; password?: string };
+    try {
+      body = await req.json();
+    } catch {
       return new Response(
-        JSON.stringify({ error: "User ID and password are required" }),
+        JSON.stringify({ error: "Invalid request body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Validate password length
-    if (password.length < 6) {
+    const { target_user_id, password } = body;
+
+    // Comprehensive input validation
+    const userIdValidation = validateUserId(target_user_id || "");
+    if (!userIdValidation.valid) {
       return new Response(
-        JSON.stringify({ error: "Password must be at least 6 characters" }),
+        JSON.stringify({ error: userIdValidation.error }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const passwordValidation = validatePassword(password || "");
+    if (!passwordValidation.valid) {
+      return new Response(
+        JSON.stringify({ error: passwordValidation.error }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -78,13 +152,14 @@ Deno.serve(async (req) => {
 
     // Update the user's password using admin API
     const { error: updateError } = await adminClient.auth.admin.updateUserById(
-      target_user_id,
-      { password }
+      target_user_id!,
+      { password: password! }
     );
 
     if (updateError) {
+      console.error("Password update error:", updateError);
       return new Response(
-        JSON.stringify({ error: updateError.message }),
+        JSON.stringify({ error: mapErrorToSafeMessage(updateError) }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -97,10 +172,9 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
-    console.error("Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal server error";
+    console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "An unexpected error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

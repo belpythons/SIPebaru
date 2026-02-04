@@ -187,11 +187,13 @@ const EditComplaint = () => {
 
     if (uploadError) throw uploadError;
 
-    const { data: urlData } = supabase.storage
+    // Use signed URL for secure access (1 hour expiry)
+    const { data: urlData, error: urlError } = await supabase.storage
       .from("complaint-photos")
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, 3600);
 
-    return urlData.publicUrl;
+    if (urlError) throw urlError;
+    return urlData.signedUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

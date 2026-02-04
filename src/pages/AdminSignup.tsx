@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Package, LogIn, ArrowLeft } from "lucide-react";
+import { Package, UserPlus, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,15 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const Login = () => {
+const AdminSignup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
+    username: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,56 +26,54 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Password tidak cocok",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password minimal 6 karakter",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      const response = await supabase.functions.invoke("signup-admin", {
+        body: {
+          email: formData.email,
+          password: formData.password,
+          username: formData.username,
+        },
       });
 
-      if (error) throw error;
-
-      // Check if user has admin role
-      const { data: roleData, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (roleError || !roleData) {
-        await supabase.auth.signOut();
-        throw new Error("Anda tidak memiliki akses admin");
+      if (response.error) {
+        throw new Error(response.error.message || "Gagal mendaftar");
       }
 
-      // Check profile status
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("status")
-        .eq("user_id", data.user.id)
-        .single();
-
-      if (profileData?.status === "pending") {
-        await supabase.auth.signOut();
-        throw new Error("Akun Anda menunggu aktivasi oleh Admin Utama");
-      }
-
-      if (profileData?.status === "rejected") {
-        await supabase.auth.signOut();
-        throw new Error("Akun Anda telah ditolak oleh Admin Utama");
+      if (response.data?.error) {
+        throw new Error(response.data.error);
       }
 
       toast({
-        title: "Login berhasil",
-        description: "Selamat datang di panel admin SIPebaru",
+        title: "Pendaftaran Berhasil",
+        description: "Akun Anda menunggu aktivasi oleh Admin Utama. Silakan hubungi admin untuk proses aktivasi.",
       });
 
-      navigate("/admin");
+      navigate("/login");
     } catch (error: any) {
       toast({
-        title: "Login gagal",
-        description: error.message || "Email atau password salah",
+        title: "Pendaftaran Gagal",
+        description: error.message || "Terjadi kesalahan",
         variant: "destructive",
       });
     } finally {
@@ -94,7 +94,6 @@ const Login = () => {
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
           <div className="container max-w-6xl mx-auto px-4 sm:px-6">
             <div className="flex h-14 sm:h-16 items-center justify-between">
-              {/* Logo & Brand */}
               <Link to="/" className="flex items-center gap-2 sm:gap-3">
                 <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary text-primary-foreground">
                   <Package className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -105,13 +104,12 @@ const Login = () => {
                 </div>
               </Link>
 
-              {/* Back Button */}
               <Link
-                to="/"
+                to="/login"
                 className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1.5 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Kembali ke Beranda</span>
+                <span className="hidden sm:inline">Kembali ke Login</span>
               </Link>
             </div>
           </div>
@@ -122,17 +120,32 @@ const Login = () => {
           <Card className="w-full max-w-md shadow-lg border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
             <CardHeader className="text-center pb-4 sm:pb-6 px-6 sm:px-8 pt-6 sm:pt-8">
               <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-4 mx-auto">
-                <LogIn className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
+                <UserPlus className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
               </div>
               <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
-                Admin Login
+                Daftar Admin
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-2">
-                Masuk ke panel administrasi SIPebaru
+                Buat akun admin baru. Akun akan diaktivasi oleh Admin Utama.
               </p>
             </CardHeader>
             <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Nama Lengkap</Label>
+                  <Input
+                    id="username"
+                    name="username"
+                    type="text"
+                    placeholder="Masukkan nama lengkap"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    required
+                    minLength={3}
+                    className="h-11 sm:h-12 bg-background"
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -153,10 +166,26 @@ const Login = () => {
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Minimal 6 karakter"
                     value={formData.password}
                     onChange={handleInputChange}
                     required
+                    minLength={6}
+                    className="h-11 sm:h-12 bg-background"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="Ulangi password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required
+                    minLength={6}
                     className="h-11 sm:h-12 bg-background"
                   />
                 </div>
@@ -166,14 +195,23 @@ const Login = () => {
                   className="w-full gap-2 h-11 sm:h-12 text-base shadow-lg hover:shadow-xl transition-shadow"
                   disabled={isLoading}
                 >
-                  <LogIn className="h-4 w-4" />
-                  {isLoading ? "Memproses..." : "Login"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4" />
+                      Daftar
+                    </>
+                  )}
                 </Button>
 
                 <p className="text-center text-sm text-muted-foreground">
-                  Belum punya akun?{" "}
-                  <Link to="/admin/signup" className="text-primary hover:underline font-medium">
-                    Daftar di sini
+                  Sudah punya akun?{" "}
+                  <Link to="/login" className="text-primary hover:underline font-medium">
+                    Login di sini
                   </Link>
                 </p>
               </form>
@@ -191,9 +229,7 @@ const Login = () => {
                 </div>
                 <span className="font-medium text-foreground text-sm">SIPebaru</span>
               </div>
-              
               <span className="hidden sm:inline text-muted-foreground">•</span>
-
               <p className="text-sm text-muted-foreground text-center">
                 © {new Date().getFullYear()} Sistem Informasi Pengaduan Barang Rusak
               </p>
@@ -205,4 +241,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default AdminSignup;

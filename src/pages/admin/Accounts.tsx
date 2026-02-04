@@ -91,7 +91,7 @@ const Accounts = () => {
           <TabsContent value="admin">
             <Card className="shadow-card">
               <CardContent className="pt-6">
-                <AdminAccountsTab />
+                <AdminAccountsTab isAdminUtama={isAdminUtama} />
               </CardContent>
             </Card>
           </TabsContent>

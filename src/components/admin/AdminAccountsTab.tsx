@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Edit, Trash2, Clock, CheckCircle, XCircle, UserCheck, UserX } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -33,20 +35,29 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+type AdminStatus = "pending" | "active" | "rejected";
+
 interface Profile {
   id: string;
   user_id: string;
   username: string;
+  email: string | null;
+  status: AdminStatus;
   created_at: string;
 }
 
-const AdminAccountsTab = () => {
+interface AdminAccountsTabProps {
+  isAdminUtama?: boolean;
+}
+
+const AdminAccountsTab = ({ isAdminUtama = false }: AdminAccountsTabProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<AdminStatus>("active");
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -54,6 +65,11 @@ const AdminAccountsTab = () => {
     confirmPassword: "",
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    profile: Profile | null;
+    action: "approve" | "reject" | null;
+  }>({ open: false, profile: null, action: null });
 
   // Fetch current user
   const { } = useQuery({
@@ -78,6 +94,37 @@ const AdminAccountsTab = () => {
     },
   });
 
+  // Update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: AdminStatus }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-profiles"] });
+      toast({
+        title: variables.status === "active" ? "Akun Diaktifkan" : "Akun Ditolak",
+        description: `Status akun berhasil diperbarui`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Gagal Memperbarui Status",
+        description: error.message || "Terjadi kesalahan",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const pendingCount = profiles.filter((p) => p.status === "pending").length;
+  const activeCount = profiles.filter((p) => p.status === "active").length;
+  const rejectedCount = profiles.filter((p) => p.status === "rejected").length;
+
+  const filteredProfiles = profiles.filter((p) => p.status === activeSubTab);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -101,6 +148,21 @@ const AdminAccountsTab = () => {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     resetForm();
+  };
+
+  const handleAction = (profile: Profile, action: "approve" | "reject") => {
+    setConfirmDialog({ open: true, profile, action });
+  };
+
+  const confirmAction = () => {
+    if (!confirmDialog.profile || !confirmDialog.action) return;
+
+    updateStatusMutation.mutate({
+      id: confirmDialog.profile.id,
+      status: confirmDialog.action === "approve" ? "active" : "rejected",
+    });
+
+    setConfirmDialog({ open: false, profile: null, action: null });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -200,6 +262,29 @@ const AdminAccountsTab = () => {
     });
   };
 
+  const getStatusBadge = (status: AdminStatus) => {
+    switch (status) {
+      case "pending":
+        return (
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+            <Clock className="h-3 w-3 mr-1" />Pending
+          </Badge>
+        );
+      case "active":
+        return (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+            <CheckCircle className="h-3 w-3 mr-1" />Aktif
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">
+            <XCircle className="h-3 w-3 mr-1" />Ditolak
+          </Badge>
+        );
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -255,38 +340,87 @@ const AdminAccountsTab = () => {
         </Dialog>
       </div>
 
+      {/* Status Tabs for Admin Utama */}
+      {isAdminUtama && pendingCount > 0 && (
+        <Tabs value={activeSubTab} onValueChange={(v) => setActiveSubTab(v as AdminStatus)} className="mb-4">
+          <TabsList>
+            <TabsTrigger value="pending" className="gap-2">
+              <Clock className="h-4 w-4" />
+              Pending ({pendingCount})
+            </TabsTrigger>
+            <TabsTrigger value="active" className="gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Aktif ({activeCount})
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="gap-2">
+              <XCircle className="h-4 w-4" />
+              Ditolak ({rejectedCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
+
       {/* Desktop Table */}
       <div className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Username</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Tanggal Dibuat</TableHead>
               <TableHead className="text-center">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {profiles.length === 0 ? (
+            {(isAdminUtama ? filteredProfiles : profiles.filter(p => p.status === "active")).length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Belum ada akun admin</TableCell>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Tidak ada akun admin</TableCell>
               </TableRow>
             ) : (
-              profiles.map((profile) => (
+              (isAdminUtama ? filteredProfiles : profiles.filter(p => p.status === "active")).map((profile) => (
                 <TableRow key={profile.id}>
                   <TableCell className="font-medium">
                     {profile.username}
                     {profile.user_id === currentUserId && <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>}
                   </TableCell>
+                  <TableCell>{profile.email || "-"}</TableCell>
+                  <TableCell>{getStatusBadge(profile.status)}</TableCell>
                   <TableCell>{formatDate(profile.created_at)}</TableCell>
                   <TableCell className="text-center">
                     <div className="flex justify-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleOpenDialog(profile)} className="gap-1">
-                        <Edit className="h-4 w-4" />Edit
-                      </Button>
-                      {profile.user_id !== currentUserId && (
-                        <Button variant="outline" size="sm" onClick={() => { setSelectedProfile(profile); setIsDeleteDialogOpen(true); }} className="gap-1 text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />Hapus
-                        </Button>
+                      {activeSubTab === "pending" && isAdminUtama ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => handleAction(profile, "approve")}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            <UserCheck className="h-4 w-4" />Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleAction(profile, "reject")}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            <UserX className="h-4 w-4" />Reject
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => handleOpenDialog(profile)} className="gap-1">
+                            <Edit className="h-4 w-4" />Edit
+                          </Button>
+                          {profile.user_id !== currentUserId && (
+                            <Button variant="outline" size="sm" onClick={() => { setSelectedProfile(profile); setIsDeleteDialogOpen(true); }} className="gap-1 text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />Hapus
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </TableCell>
@@ -299,26 +433,55 @@ const AdminAccountsTab = () => {
 
       {/* Mobile Cards */}
       <div className="md:hidden space-y-3">
-        {profiles.length === 0 ? (
-          <p className="text-center py-8 text-muted-foreground">Belum ada akun admin</p>
+        {(isAdminUtama ? filteredProfiles : profiles.filter(p => p.status === "active")).length === 0 ? (
+          <p className="text-center py-8 text-muted-foreground">Tidak ada akun admin</p>
         ) : (
-          profiles.map((profile) => (
+          (isAdminUtama ? filteredProfiles : profiles.filter(p => p.status === "active")).map((profile) => (
             <div key={profile.id} className="p-4 border rounded-lg space-y-3 bg-card">
-              <div>
-                <p className="font-semibold">
-                  {profile.username}
-                  {profile.user_id === currentUserId && <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>}
-                </p>
-                <p className="text-sm text-muted-foreground">{formatDate(profile.created_at)}</p>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-semibold">
+                    {profile.username}
+                    {profile.user_id === currentUserId && <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{profile.email || "-"}</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(profile.created_at)}</p>
+                </div>
+                {getStatusBadge(profile.status)}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleOpenDialog(profile)} className="flex-1 gap-1">
-                  <Edit className="h-4 w-4" />Edit
-                </Button>
-                {profile.user_id !== currentUserId && (
-                  <Button variant="outline" size="sm" onClick={() => { setSelectedProfile(profile); setIsDeleteDialogOpen(true); }} className="flex-1 gap-1 text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />Hapus
-                  </Button>
+                {activeSubTab === "pending" && isAdminUtama ? (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      onClick={() => handleAction(profile, "approve")}
+                      disabled={updateStatusMutation.isPending}
+                    >
+                      <UserCheck className="h-4 w-4" />Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleAction(profile, "reject")}
+                      disabled={updateStatusMutation.isPending}
+                    >
+                      <UserX className="h-4 w-4" />Reject
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => handleOpenDialog(profile)} className="flex-1 gap-1">
+                      <Edit className="h-4 w-4" />Edit
+                    </Button>
+                    {profile.user_id !== currentUserId && (
+                      <Button variant="outline" size="sm" onClick={() => { setSelectedProfile(profile); setIsDeleteDialogOpen(true); }} className="flex-1 gap-1 text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />Hapus
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -338,6 +501,38 @@ const AdminAccountsTab = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Approval Confirmation Dialog */}
+      <AlertDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDialog.action === "approve" ? "Aktivasi Akun Admin" : "Tolak Akun Admin"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDialog.action === "approve"
+                ? `Apakah Anda yakin ingin mengaktifkan akun "${confirmDialog.profile?.username}"? Admin akan dapat login ke sistem.`
+                : `Apakah Anda yakin ingin menolak akun "${confirmDialog.profile?.username}"? Admin tidak akan dapat login ke sistem.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmAction}
+              className={
+                confirmDialog.action === "approve"
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700"
+              }
+            >
+              {confirmDialog.action === "approve" ? "Aktifkan" : "Tolak"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

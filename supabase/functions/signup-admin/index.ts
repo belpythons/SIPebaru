@@ -2,65 +2,47 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Validation helpers
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+const usernameRegex = /^[a-zA-Z0-9_\-\s]+$/;
 
 function validateEmail(email: string): { valid: boolean; error?: string } {
   if (!email || typeof email !== "string") {
-    return { valid: false, error: "Email is required" };
+    return { valid: false, error: "Email wajib diisi" };
   }
   const trimmed = email.trim();
   if (!emailRegex.test(trimmed)) {
-    return { valid: false, error: "Invalid email format" };
+    return { valid: false, error: "Format email tidak valid" };
   }
   if (trimmed.length > 255) {
-    return { valid: false, error: "Email must be less than 255 characters" };
+    return { valid: false, error: "Email maksimal 255 karakter" };
   }
   return { valid: true };
 }
 
 function validateUsername(username: string): { valid: boolean; error?: string } {
   if (!username || typeof username !== "string") {
-    return { valid: false, error: "Username is required" };
+    return { valid: false, error: "Username wajib diisi" };
   }
   const trimmed = username.trim();
   if (trimmed.length < 3 || trimmed.length > 50) {
-    return { valid: false, error: "Username must be 3-50 characters" };
+    return { valid: false, error: "Username harus 3-50 karakter" };
   }
   if (!usernameRegex.test(trimmed)) {
-    return { valid: false, error: "Username can only contain letters, numbers, underscores and hyphens" };
+    return { valid: false, error: "Username hanya boleh huruf, angka, spasi, underscore dan dash" };
   }
   return { valid: true };
 }
 
 function validatePassword(password: string): { valid: boolean; error?: string } {
   if (!password || typeof password !== "string") {
-    return { valid: false, error: "Password is required" };
+    return { valid: false, error: "Password wajib diisi" };
   }
   if (password.length < 6) {
-    return { valid: false, error: "Password must be at least 6 characters" };
+    return { valid: false, error: "Password minimal 6 karakter" };
   }
   if (password.length > 128) {
-    return { valid: false, error: "Password must be less than 128 characters" };
+    return { valid: false, error: "Password maksimal 128 karakter" };
   }
   return { valid: true };
-}
-
-// Safe error mapping to prevent information leakage
-function mapErrorToSafeMessage(error: Error | { message?: string }): string {
-  const message = error?.message?.toLowerCase() || "";
-  
-  if (message.includes("duplicate") || message.includes("already exists") || message.includes("already registered")) {
-    return "Email address is already in use";
-  }
-  if (message.includes("invalid email")) {
-    return "Invalid email format";
-  }
-  if (message.includes("password")) {
-    return "Password does not meet requirements";
-  }
-  
-  // Return generic message for all other errors
-  return "Failed to create admin account";
 }
 
 // Get allowed origins for CORS
@@ -96,56 +78,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get the authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Authentication required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Create Supabase client with user's auth token
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // User client to verify the caller is an admin
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    // Get the current user
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Authentication required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check if the user is an admin
-    const { data: roleData, error: roleError } = await userClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (roleError || !roleData) {
-      return new Response(
-        JSON.stringify({ error: "Insufficient permissions" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // Parse the request body
     let body: { email?: string; password?: string; username?: string };
     try {
       body = await req.json();
     } catch {
       return new Response(
-        JSON.stringify({ error: "Invalid request body" }),
+        JSON.stringify({ error: "Request body tidak valid" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -177,47 +116,67 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Admin client for creating users
+    // Create Supabase client with service role for user creation
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check if email already exists
+    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+    const emailExists = existingUsers?.users?.some(
+      (u) => u.email?.toLowerCase() === email!.trim().toLowerCase()
+    );
+    
+    if (emailExists) {
+      return new Response(
+        JSON.stringify({ error: "Email sudah terdaftar" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Create the new user using admin API
     const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
       email: email!.trim(),
       password: password!,
-      email_confirm: true, // Auto-confirm the email
+      email_confirm: true, // Auto-confirm the email for now
     });
 
     if (createError) {
-      console.error("Admin creation error:", createError);
+      console.error("Admin signup error:", createError);
       return new Response(
-        JSON.stringify({ error: mapErrorToSafeMessage(createError) }),
+        JSON.stringify({ error: "Gagal membuat akun. Silakan coba lagi." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (!newUserData.user) {
       return new Response(
-        JSON.stringify({ error: "Failed to create admin account" }),
+        JSON.stringify({ error: "Gagal membuat akun" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create profile for the new user (status: active since created by admin)
+    // Create profile for the new user with PENDING status
     const { error: profileError } = await adminClient
       .from("profiles")
       .insert({
         user_id: newUserData.user.id,
         username: username!.trim(),
         email: email!.trim(),
-        status: "active", // Directly active since created by existing admin
+        status: "pending", // Needs admin approval
       });
 
     if (profileError) {
       console.error("Profile creation error:", profileError);
-      // Don't fail the request, profile can be created later
+      // Clean up the auth user if profile creation failed
+      await adminClient.auth.admin.deleteUser(newUserData.user.id);
+      return new Response(
+        JSON.stringify({ error: "Gagal membuat profil. Silakan coba lagi." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Add admin role
+    // Add admin role (but user won't be able to login until approved)
     const { error: roleInsertError } = await adminClient
       .from("user_roles")
       .insert({
@@ -227,21 +186,19 @@ Deno.serve(async (req) => {
 
     if (roleInsertError) {
       console.error("Role creation error:", roleInsertError);
-      // Don't fail the request, but log the error
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Admin account created successfully",
-        user_id: newUserData.user.id 
+        message: "Pendaftaran berhasil. Menunggu aktivasi oleh admin utama.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
     console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: "An unexpected error occurred" }),
+      JSON.stringify({ error: "Terjadi kesalahan. Silakan coba lagi." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

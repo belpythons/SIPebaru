@@ -190,11 +190,13 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
+        // Use signed URL for secure access (1 hour expiry)
+        const { data: urlData, error: urlError } = await supabase.storage
           .from("complaint-photos")
-          .getPublicUrl(fileName);
+          .createSignedUrl(fileName, 3600);
 
-        photoUrl = urlData.publicUrl;
+        if (urlError) throw urlError;
+        photoUrl = urlData.signedUrl;
       }
 
       const { error } = await supabase.from("complaints").insert({

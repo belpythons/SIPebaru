@@ -143,6 +143,21 @@ export type Database = {
     }
     Functions: {
       generate_ticket_number: { Args: never; Returns: string }
+      get_complaint_status: {
+        Args: { ticket_num: string }
+        Returns: {
+          completed_at: string
+          completion_photo_url: string
+          department: string
+          description: string
+          item_name: string
+          kompartemen: string
+          processed_at: string
+          reported_at: string
+          status: string
+          ticket_number: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

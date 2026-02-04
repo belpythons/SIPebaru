@@ -151,8 +151,8 @@ const Home = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container max-w-2xl mx-auto px-3 sm:px-4 py-8 sm:py-12">
-        <div className="text-center space-y-6 sm:space-y-8">
+      <main className="flex-1 flex items-center justify-center container max-w-2xl mx-auto px-3 sm:px-4 py-8 sm:py-12">
+        <div className="text-center space-y-6 sm:space-y-8 w-full">
           {/* Hero Section */}
           <div className="space-y-3 sm:space-y-4">
             <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 mb-3 sm:mb-4">

@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, CalendarIcon, Upload, X, Search } from "lucide-react";
+import { Loader2, Plus, CalendarIcon, Upload, X, Search, Ticket } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -84,6 +84,29 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [departmentSearch, setDepartmentSearch] = useState("");
   const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
+  const [nextTicketNumber, setNextTicketNumber] = useState<string | null>(null);
+  const [isLoadingTicket, setIsLoadingTicket] = useState(false);
+
+  // Fetch next ticket number when dialog opens
+  useEffect(() => {
+    const fetchNextTicketNumber = async () => {
+      if (open) {
+        setIsLoadingTicket(true);
+        try {
+          const { data, error } = await supabase.rpc("generate_ticket_number");
+          if (error) throw error;
+          setNextTicketNumber(data);
+        } catch (error) {
+          console.error("Error fetching next ticket number:", error);
+          setNextTicketNumber(null);
+        } finally {
+          setIsLoadingTicket(false);
+        }
+      }
+    };
+
+    fetchNextTicketNumber();
+  }, [open]);
 
   // Fetch departments from database
   const { data: departments = [] } = useQuery({
@@ -199,6 +222,7 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
       setPhotoPreview(null);
       setDepartmentSearch("");
       setIsDepartmentOpen(false);
+      setNextTicketNumber(null);
       setOpen(false);
       onSuccess();
     } catch (error: any) {
@@ -225,6 +249,24 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
         <DialogHeader>
           <DialogTitle>Tambah Pengaduan Baru</DialogTitle>
         </DialogHeader>
+        
+        {/* Display next ticket number preview */}
+        <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mb-2">
+          <div className="flex items-center gap-2 mb-1">
+            <Ticket className="h-4 w-4 text-primary" />
+            <span className="text-xs sm:text-sm text-muted-foreground">Nomor Pengaduan Berikutnya</span>
+          </div>
+          {isLoadingTicket ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Memuat...</span>
+            </div>
+          ) : (
+            <span className="text-lg sm:text-xl font-bold text-primary tracking-wide">
+              {nextTicketNumber || "XXXX/ADKOR/Bln/Thn"}
+            </span>
+          )}
+        </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField

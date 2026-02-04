@@ -174,7 +174,7 @@ const Home = () => {
             
             <div className="flex flex-col sm:flex-row gap-2">
               <Input
-                placeholder="Masukkan Nomor Pengaduan (contoh: 0001/ADKOR/Feb/2026)"
+                placeholder="Masukkan Nomor Pengaduan"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}

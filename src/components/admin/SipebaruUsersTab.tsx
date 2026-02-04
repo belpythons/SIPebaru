@@ -41,9 +41,10 @@ interface SipebaruUser {
 
 interface SipebaruUsersTabProps {
   filterStatus?: UserStatus;
+  canManage?: boolean; // Only admin_utama can approve/reject
 }
 
-const SipebaruUsersTab = ({ filterStatus }: SipebaruUsersTabProps) => {
+const SipebaruUsersTab = ({ filterStatus, canManage = false }: SipebaruUsersTabProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -163,7 +164,7 @@ const SipebaruUsersTab = ({ filterStatus }: SipebaruUsersTabProps) => {
               <TableHead>Email</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Terdaftar</TableHead>
-              {filterStatus === "pending" && <TableHead>Aksi</TableHead>}
+              {filterStatus === "pending" && canManage && <TableHead>Aksi</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -179,7 +180,7 @@ const SipebaruUsersTab = ({ filterStatus }: SipebaruUsersTabProps) => {
                 <TableCell>
                   {format(new Date(user.created_at), "dd MMM yyyy HH:mm", { locale: localeId })}
                 </TableCell>
-                {filterStatus === "pending" && (
+                {filterStatus === "pending" && canManage && (
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
@@ -227,7 +228,7 @@ const SipebaruUsersTab = ({ filterStatus }: SipebaruUsersTabProps) => {
               {user.email && <p>Email: {user.email}</p>}
               <p>Terdaftar: {format(new Date(user.created_at), "dd MMM yyyy HH:mm", { locale: localeId })}</p>
             </div>
-            {filterStatus === "pending" && (
+            {filterStatus === "pending" && canManage && (
               <div className="flex gap-2">
                 <Button
                   size="sm"

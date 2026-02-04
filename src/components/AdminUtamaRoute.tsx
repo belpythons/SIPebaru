@@ -2,30 +2,30 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
-interface ProtectedRouteProps {
+interface AdminUtamaRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const AdminUtamaRoute = ({ children }: AdminUtamaRouteProps) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        // Check if user has admin or admin_utama role
+        // Check if user has admin_utama role
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
-          .in("role", ["admin", "admin_utama"])
+          .eq("role", "admin_utama")
           .maybeSingle();
 
-        setIsAuthenticated(!!roleData);
+        setIsAuthorized(!!roleData);
       } else {
-        setIsAuthenticated(false);
+        setIsAuthorized(false);
       }
       
       setIsLoading(false);
@@ -48,11 +48,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+  if (!isAuthorized) {
+    return <Navigate to="/admin" replace />;
   }
 
   return <>{children}</>;
 };
 
-export default ProtectedRoute;
+export default AdminUtamaRoute;

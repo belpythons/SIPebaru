@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, FileText, LogIn, Loader2, Package } from "lucide-react";
+import { Search, FileText, LogIn, Loader2, Package, UserPlus } from "lucide-react";
 import { ComplaintFormDialog } from "@/components/ComplaintFormDialog";
 import { StatusSearchResult } from "@/components/StatusSearchResult";
 
@@ -140,10 +140,15 @@ const Home = () => {
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">Ajukan Pengaduan</span>
               </Button>
-              <Button variant="outline" onClick={() => navigate("/login")} className="gap-2" size="sm">
+              <Button variant="outline" asChild size="sm" className="gap-2">
+                <Link to="/sipebaru/signup">
+                  <UserPlus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Daftar</span>
+                </Link>
+              </Button>
+              <Button variant="default" onClick={() => navigate("/login")} className="gap-2" size="sm">
                 <LogIn className="h-4 w-4" />
-                <span className="hidden sm:inline">Login Admin</span>
-                <span className="sm:hidden">Login</span>
+                <span className="hidden sm:inline">Login</span>
               </Button>
             </nav>
           </div>

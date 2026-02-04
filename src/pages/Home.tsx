@@ -49,26 +49,40 @@ const Home = () => {
       // Normalize search query - support searching by sequence number only
       const query = searchQuery.trim().toUpperCase();
       
-      // If query looks like just a sequence number (e.g., "0001" or "1"), search with pattern
+      // If query looks like just a sequence number (e.g., "0001" or "1"), format it
       let searchPattern = query;
       if (/^\d+$/.test(query)) {
         // Pad to 4 digits if just numbers
-        searchPattern = query.padStart(4, '0') + '/ADKOR/%';
+        searchPattern = query.padStart(4, '0') + '/ADKOR/';
       } else if (/^\d+\/ADKOR$/i.test(query)) {
-        // If query is like "0001/ADKOR", add wildcard
-        searchPattern = query + '/%';
+        // If query is like "0001/ADKOR", add trailing slash
+        searchPattern = query + '/';
       }
       
+      // Use secure RPC function instead of direct table query
+      // This returns only non-sensitive fields (excludes reporter_name, admin_note)
       const { data, error } = await supabase
-        .from("complaints")
-        .select("ticket_number, item_name, department, kompartemen, status, reported_at, processed_at, completed_at, description, reporter_name, admin_note, completion_photo_url")
-        .ilike("ticket_number", searchPattern.includes('%') ? searchPattern : query)
-        .maybeSingle();
+        .rpc("get_complaint_status", { ticket_num: searchPattern.includes('/') ? searchPattern : query });
 
       if (error) throw error;
 
-      if (data) {
-        setSearchResult(data as ComplaintResult);
+      if (data && data.length > 0) {
+        // Map RPC result to ComplaintResult format
+        const result = data[0];
+        setSearchResult({
+          ticket_number: result.ticket_number,
+          item_name: result.item_name,
+          department: result.department,
+          kompartemen: result.kompartemen,
+          status: result.status as "pending" | "processing" | "completed",
+          reported_at: result.reported_at,
+          processed_at: result.processed_at,
+          completed_at: result.completed_at,
+          description: result.description,
+          reporter_name: "", // Not exposed for privacy
+          admin_note: null, // Not exposed for privacy
+          completion_photo_url: result.completion_photo_url,
+        });
       } else {
         setSearchError("Pengaduan dengan nomor tersebut tidak ditemukan");
       }

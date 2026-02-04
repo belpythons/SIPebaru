@@ -1,7 +1,7 @@
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Building2, Calendar, FileText, Clock, CheckCircle, User, MessageSquare, Camera } from "lucide-react";
+import { Package, Building2, Calendar, FileText, Clock, CheckCircle, Camera } from "lucide-react";
 
 interface Complaint {
   ticket_number: string;
@@ -13,8 +13,8 @@ interface Complaint {
   processed_at?: string | null;
   completed_at?: string | null;
   description: string | null;
-  reporter_name: string;
-  admin_note?: string | null;
+  reporter_name?: string; // Optional - not exposed in public search
+  admin_note?: string | null; // Optional - not exposed in public search
   completion_photo_url?: string | null;
 }
 
@@ -65,14 +65,6 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
       </CardHeader>
       <CardContent className="space-y-3 sm:space-y-4">
         <div className="space-y-2 sm:space-y-3">
-          <div className="flex items-start gap-2 sm:gap-3">
-            <User className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-sm text-muted-foreground">Nama Pelapor</p>
-              <p className="font-medium text-sm sm:text-base truncate">{complaint.reporter_name}</p>
-            </div>
-          </div>
-
           <div className="flex items-start gap-2 sm:gap-3">
             <Package className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div className="min-w-0 flex-1">
@@ -126,16 +118,6 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
               <div className="min-w-0 flex-1">
                 <p className="text-xs sm:text-sm text-muted-foreground">Deskripsi</p>
                 <p className="font-medium text-sm sm:text-base break-words">{complaint.description}</p>
-              </div>
-            </div>
-          )}
-
-          {complaint.admin_note && (
-            <div className="flex items-start gap-2 sm:gap-3">
-              <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground">Catatan Admin</p>
-                <p className="font-medium text-sm sm:text-base break-words bg-primary/5 p-2 rounded-md border border-primary/10">{complaint.admin_note}</p>
               </div>
             </div>
           )}

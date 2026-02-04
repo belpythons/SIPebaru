@@ -443,6 +443,11 @@ const Complaints = () => {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
                 <p className="text-sm text-muted-foreground">
                   Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredComplaints.length)} dari {filteredComplaints.length} data
+                  {(searchQuery.trim() || filterDate) && (
+                    <span className="font-medium text-primary ml-1">
+                      (Total hasil {searchQuery.trim() ? "pencarian" : "filter"}: {filteredComplaints.length})
+                    </span>
+                  )}
                 </p>
                 <div className="flex items-center gap-1 sm:gap-2">
                   <Button

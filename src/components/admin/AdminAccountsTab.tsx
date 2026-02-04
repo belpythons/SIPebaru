@@ -341,12 +341,12 @@ const AdminAccountsTab = ({ isAdminUtama = false }: AdminAccountsTabProps) => {
       </div>
 
       {/* Status Tabs for Admin Utama */}
-      {isAdminUtama && pendingCount > 0 && (
+      {isAdminUtama && (
         <Tabs value={activeSubTab} onValueChange={(v) => setActiveSubTab(v as AdminStatus)} className="mb-4">
           <TabsList>
             <TabsTrigger value="pending" className="gap-2">
               <Clock className="h-4 w-4" />
-              Pending ({pendingCount})
+              Pending {pendingCount > 0 && <span className="ml-1 px-1.5 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded-full">{pendingCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="active" className="gap-2">
               <CheckCircle className="h-4 w-4" />

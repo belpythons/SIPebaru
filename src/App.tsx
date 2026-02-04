@@ -12,31 +12,44 @@ import EditComplaint from "./pages/admin/EditComplaint";
 import Reports from "./pages/admin/Reports";
 import Accounts from "./pages/admin/Accounts";
 import Departments from "./pages/admin/Departments";
+import UserManagement from "./pages/admin/UserManagement";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminUtamaRoute from "./components/AdminUtamaRoute";
+import { SipebaruAuthProvider } from "./contexts/SipebaruAuthContext";
+import SipebaruSignUp from "./pages/SipebaruSignUp";
+import SipebaruLogin from "./pages/SipebaruLogin";
+import SipebaruDashboard from "./pages/SipebaruDashboard";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/setup" element={<Setup />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/admin/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
-          <Route path="/admin/complaints/:id" element={<ProtectedRoute><EditComplaint /></ProtectedRoute>} />
-          <Route path="/admin/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-          <Route path="/admin/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
-          <Route path="/admin/departments" element={<ProtectedRoute><Departments /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <SipebaruAuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/setup" element={<Setup />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/admin/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
+            <Route path="/admin/complaints/:id" element={<ProtectedRoute><EditComplaint /></ProtectedRoute>} />
+            <Route path="/admin/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/admin/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+            <Route path="/admin/departments" element={<ProtectedRoute><Departments /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<AdminUtamaRoute><UserManagement /></AdminUtamaRoute>} />
+            {/* SIPEBARU User Routes */}
+            <Route path="/sipebaru/signup" element={<SipebaruSignUp />} />
+            <Route path="/sipebaru/login" element={<SipebaruLogin />} />
+            <Route path="/sipebaru/dashboard" element={<SipebaruDashboard />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </SipebaruAuthProvider>
   </QueryClientProvider>
 );
 

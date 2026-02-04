@@ -12,10 +12,8 @@ import EditComplaint from "./pages/admin/EditComplaint";
 import Reports from "./pages/admin/Reports";
 import Accounts from "./pages/admin/Accounts";
 import Departments from "./pages/admin/Departments";
-import UserManagement from "./pages/admin/UserManagement";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminUtamaRoute from "./components/AdminUtamaRoute";
 import { SipebaruAuthProvider } from "./contexts/SipebaruAuthContext";
 import SipebaruSignUp from "./pages/SipebaruSignUp";
 import SipebaruLogin from "./pages/SipebaruLogin";
@@ -40,7 +38,6 @@ const App = () => (
             <Route path="/admin/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/admin/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
             <Route path="/admin/departments" element={<ProtectedRoute><Departments /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<AdminUtamaRoute><UserManagement /></AdminUtamaRoute>} />
             {/* SIPEBARU User Routes */}
             <Route path="/sipebaru/signup" element={<SipebaruSignUp />} />
             <Route path="/sipebaru/login" element={<SipebaruLogin />} />

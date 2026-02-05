@@ -118,7 +118,7 @@ const Dashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in w-full max-w-full overflow-x-hidden">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
 
         {/* Stats Grid */}

@@ -63,13 +63,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-x-hidden w-full max-w-full">
       {/* Modern gradient background */}
       <div className="fixed inset-0 bg-gradient-to-br from-primary/10 via-blue-400/5 to-cyan-300/5" />
       <div className="fixed top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/4" />
       <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-cyan-400/15 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/4" />
       
-      <div className="relative z-10 min-h-screen flex">
+      <div className="relative z-10 min-h-screen flex w-full max-w-full">
         {/* Sidebar - Desktop */}
         <aside
           className={cn(
@@ -189,7 +189,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {/* Main Content */}
         <main
           className={cn(
-            "flex-1 transition-all duration-300 pt-16 md:pt-0",
+            "flex-1 transition-all duration-300 pt-16 md:pt-0 min-w-0 w-full",
             isSidebarOpen ? "md:ml-64" : "md:ml-20"
           )}
         >
@@ -201,7 +201,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </header>
 
           {/* Page Content */}
-          <div className="p-4 md:p-6">{children}</div>
+          <div className="p-3 sm:p-4 md:p-6 w-full max-w-full overflow-x-hidden">{children}</div>
         </main>
       </div>
     </div>

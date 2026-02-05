@@ -17,6 +17,7 @@ export type Database = {
       complaints: {
         Row: {
           admin_note: string | null
+          complaint_code: string
           completed_at: string | null
           completion_photo_url: string | null
           created_at: string
@@ -36,6 +37,7 @@ export type Database = {
         }
         Insert: {
           admin_note?: string | null
+          complaint_code: string
           completed_at?: string | null
           completion_photo_url?: string | null
           created_at?: string
@@ -55,6 +57,7 @@ export type Database = {
         }
         Update: {
           admin_note?: string | null
+          complaint_code?: string
           completed_at?: string | null
           completion_photo_url?: string | null
           created_at?: string
@@ -235,6 +238,7 @@ export type Database = {
           unit_kerja: string
         }[]
       }
+      generate_complaint_code: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       get_complaint_status: {
         Args: { ticket_num: string }

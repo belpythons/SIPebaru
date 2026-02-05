@@ -22,18 +22,18 @@ const StatCard = ({ title, value, icon: Icon, variant = "default" }: StatCardPro
   
   return (
     <Card className={cn("shadow-card transition-shadow hover:shadow-soft", variantStyles[variant])}>
-      <CardContent className="p-6">
+      <CardContent className="p-3 sm:p-4 lg:p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <p className={cn("text-sm font-medium", isPrimary ? "opacity-90" : "text-muted-foreground")}>
+          <div className="min-w-0 flex-1">
+            <p className={cn("text-xs sm:text-sm font-medium truncate", isPrimary ? "opacity-90" : "text-muted-foreground")}>
               {title}
             </p>
-            <p className={cn("text-3xl font-bold mt-1", isPrimary ? "" : "text-foreground")}>
+            <p className={cn("text-xl sm:text-2xl lg:text-3xl font-bold mt-0.5 sm:mt-1", isPrimary ? "" : "text-foreground")}>
               {value}
             </p>
           </div>
-          <div className={cn("p-3 rounded-lg", isPrimary ? "bg-white/20" : "bg-primary/10")}>
-            <Icon className={cn("h-6 w-6", isPrimary ? "" : "text-primary")} />
+          <div className={cn("p-2 sm:p-3 rounded-lg flex-shrink-0 ml-2", isPrimary ? "bg-white/20" : "bg-primary/10")}>
+            <Icon className={cn("h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6", isPrimary ? "" : "text-primary")} />
           </div>
         </div>
       </CardContent>

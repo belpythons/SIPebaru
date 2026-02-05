@@ -4,9 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, FileText, LogIn, Loader2, Package } from "lucide-react";
+import { Search, FileText, LogIn, Loader2, Package, ClipboardList, CheckCircle2, Clock, Send, Eye } from "lucide-react";
 import { ComplaintFormDialog } from "@/components/ComplaintFormDialog";
 import { StatusSearchResult } from "@/components/StatusSearchResult";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface ComplaintResult {
   ticket_number: string;
@@ -31,6 +38,35 @@ const Home = () => {
   const [searchResult, setSearchResult] = useState<ComplaintResult | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSOPOpen, setIsSOPOpen] = useState(false);
+
+  const sopSteps = [
+    {
+      icon: Send,
+      title: "Ajukan Pengaduan",
+      description: "Isi formulir pengaduan dengan data lengkap termasuk nama, departemen, nama barang, dan deskripsi kerusakan.",
+    },
+    {
+      icon: ClipboardList,
+      title: "Terima Kode Pengaduan",
+      description: "Setelah berhasil submit, Anda akan menerima kode pengaduan 5 digit. Simpan kode ini untuk melacak status.",
+    },
+    {
+      icon: Clock,
+      title: "Proses Verifikasi",
+      description: "Tim admin akan memverifikasi dan memproses pengaduan Anda. Status berubah menjadi 'Diproses'.",
+    },
+    {
+      icon: CheckCircle2,
+      title: "Pengaduan Selesai",
+      description: "Setelah barang diperbaiki/diganti, status berubah menjadi 'Selesai' beserta bukti penyelesaian.",
+    },
+    {
+      icon: Eye,
+      title: "Cek Status Kapan Saja",
+      description: "Gunakan kode pengaduan untuk memantau progres pengaduan Anda melalui halaman utama.",
+    },
+  ];
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -124,10 +160,10 @@ const Home = () => {
                 variant="ghost" 
                 size="sm" 
                 className="gap-2 text-muted-foreground hover:text-foreground"
-                onClick={() => setIsFormOpen(true)}
+                onClick={() => setIsSOPOpen(true)}
               >
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Ajukan Pengaduan</span>
+                <ClipboardList className="h-4 w-4" />
+                <span className="hidden sm:inline">SOP Pengaduan</span>
               </Button>
               <Button variant="outline" onClick={() => navigate("/login")} className="gap-2" size="sm">
                 <LogIn className="h-4 w-4" />
@@ -259,6 +295,56 @@ const Home = () => {
 
       {/* Complaint Form Dialog */}
       <ComplaintFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} />
+
+      {/* SOP Dialog */}
+      <Dialog open={isSOPOpen} onOpenChange={setIsSOPOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              SOP Proses Pengaduan
+            </DialogTitle>
+            <DialogDescription>
+              Berikut adalah langkah-langkah proses pengaduan barang rusak
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {sopSteps.map((step, index) => (
+              <div 
+                key={index} 
+                className="flex gap-4 p-4 rounded-lg bg-muted/50 border border-border/50"
+              >
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-semibold">
+                    {index + 1}
+                  </div>
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <step.icon className="h-4 w-4 text-primary" />
+                    <h4 className="font-semibold text-foreground">{step.title}</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-2 border-t">
+            <Button 
+              onClick={() => {
+                setIsSOPOpen(false);
+                setIsFormOpen(true);
+              }}
+              className="w-full gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Ajukan Pengaduan Sekarang
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );

@@ -46,23 +46,10 @@ const Home = () => {
     setSearchError(null);
 
     try {
-      // Normalize search query - support searching by sequence number only
-      const query = searchQuery.trim().toUpperCase();
-      
-      // If query looks like just a sequence number (e.g., "0001" or "1"), format it
-      let searchPattern = query;
-      if (/^\d+$/.test(query)) {
-        // Pad to 4 digits if just numbers
-        searchPattern = query.padStart(4, '0') + '/ADKOR/';
-      } else if (/^\d+\/ADKOR$/i.test(query)) {
-        // If query is like "0001/ADKOR", add trailing slash
-        searchPattern = query + '/';
-      }
-      
-      // Use secure RPC function instead of direct table query
-      // This returns only non-sensitive fields (excludes reporter_name, admin_note)
+      // Use RPC function that supports partial search
+      // Users can search by: "0001", "0001/ADKOR", or full "0001/ADKOR/Feb/2026"
       const { data, error } = await supabase
-        .rpc("get_complaint_status", { ticket_num: searchPattern.includes('/') ? searchPattern : query });
+        .rpc("get_complaint_status", { ticket_num: searchQuery.trim() });
 
       if (error) throw error;
 

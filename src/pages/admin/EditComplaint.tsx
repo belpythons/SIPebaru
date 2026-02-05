@@ -29,6 +29,7 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
 interface Complaint {
   id: string;
   ticket_number: string;
+  complaint_code?: string;
   reporter_name: string;
   department: string;
   kompartemen: string | null;
@@ -322,7 +323,7 @@ const EditComplaint = () => {
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="text-lg">
-              Detail Pengaduan - {complaint.ticket_number}
+              Detail Pengaduan - {complaint.complaint_code || complaint.ticket_number}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -330,9 +331,15 @@ const EditComplaint = () => {
               {/* Read-only Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Nomor Pengaduan</Label>
-                  <Input value={complaint.ticket_number} disabled className="bg-muted" />
+                  <Label>Kode Pengaduan</Label>
+                  <Input value={complaint.complaint_code || "-"} disabled className="bg-muted font-bold tracking-wide" />
                 </div>
+                <div className="space-y-2">
+                  <Label>Nomor Urut</Label>
+                  <Input value={complaint.ticket_number} disabled className="bg-muted text-sm" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Tanggal Lapor</Label>
                   <Input

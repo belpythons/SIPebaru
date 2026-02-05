@@ -37,6 +37,7 @@ import { toast } from "sonner";
 interface Complaint {
   id: string;
   ticket_number: string;
+  complaint_code?: string;
   reporter_name: string;
   department: string;
   item_name: string;
@@ -143,6 +144,7 @@ const Complaints = () => {
       const query = searchQuery.toLowerCase();
       return (
         c.ticket_number.toLowerCase().includes(query) ||
+        (c.complaint_code?.toLowerCase().includes(query) ?? false) ||
         c.reporter_name.toLowerCase().includes(query) ||
         c.department.toLowerCase().includes(query) ||
         c.item_name.toLowerCase().includes(query)
@@ -196,7 +198,10 @@ const Complaints = () => {
   const ComplaintCard = ({ complaint }: { complaint: Complaint }) => (
     <div className="p-4 border rounded-lg space-y-3 bg-card">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-primary">{complaint.ticket_number}</span>
+        <div>
+          <span className="font-bold text-primary text-lg tracking-wide">{complaint.complaint_code || "-"}</span>
+          <p className="text-xs text-muted-foreground">{complaint.ticket_number}</p>
+        </div>
         <Badge variant={statusVariants[complaint.status]}>
           {statusLabels[complaint.status]}
         </Badge>
@@ -256,7 +261,8 @@ const Complaints = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>No. Pengaduan</TableHead>
+              <TableHead>Kode</TableHead>
+              <TableHead>No. Urut</TableHead>
               <TableHead>Tanggal Lapor</TableHead>
               <TableHead>Tanggal Selesai</TableHead>
               <TableHead>Nama Pelapor</TableHead>
@@ -270,14 +276,15 @@ const Complaints = () => {
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   {searchQuery ? "Tidak ada data yang cocok" : "Tidak ada data"}
                 </TableCell>
               </TableRow>
             ) : (
               data.map((complaint) => (
                 <TableRow key={complaint.id}>
-                  <TableCell className="font-medium">{complaint.ticket_number}</TableCell>
+                  <TableCell className="font-bold text-primary tracking-wide">{complaint.complaint_code || "-"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{complaint.ticket_number}</TableCell>
                   <TableCell>{formatDate(complaint.reported_at)}</TableCell>
                   <TableCell>
                     {complaint.processed_at ? formatDate(complaint.processed_at) : "-"}

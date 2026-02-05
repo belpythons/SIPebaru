@@ -98,24 +98,69 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
           id: string
+          status: string
           updated_at: string
           user_id: string
           username: string
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id?: string
+          status?: string
           updated_at?: string
           user_id: string
           username: string
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
+          status?: string
           updated_at?: string
           user_id?: string
           username?: string
+        }
+        Relationships: []
+      }
+      sipebaru_users: {
+        Row: {
+          created_at: string
+          email: string | null
+          fid: number
+          nama: string
+          npk: string
+          password_hash: string
+          rfid: string | null
+          status: Database["public"]["Enums"]["user_status"]
+          unit_kerja: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          fid?: number
+          nama: string
+          npk: string
+          password_hash: string
+          rfid?: string | null
+          status?: Database["public"]["Enums"]["user_status"]
+          unit_kerja: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          fid?: number
+          nama?: string
+          npk?: string
+          password_hash?: string
+          rfid?: string | null
+          status?: Database["public"]["Enums"]["user_status"]
+          unit_kerja?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -142,6 +187,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      authenticate_sipebaru_user: {
+        Args: { login_identifier: string; login_password: string }
+        Returns: {
+          email: string
+          error_message: string
+          fid: number
+          nama: string
+          npk: string
+          rfid: string
+          status: Database["public"]["Enums"]["user_status"]
+          unit_kerja: string
+        }[]
+      }
       generate_ticket_number: { Args: never; Returns: string }
       get_complaint_status: {
         Args: { ticket_num: string }
@@ -165,14 +223,34 @@ export type Database = {
         }
         Returns: boolean
       }
+      hash_password: { Args: { password: string }; Returns: string }
+      register_sipebaru_user: {
+        Args: {
+          _email: string
+          _nama: string
+          _npk: string
+          _password: string
+          _rfid: string
+          _unit_kerja: string
+        }
+        Returns: {
+          error_message: string
+          success: boolean
+        }[]
+      }
       setup_first_admin: {
         Args: { _user_id: string; _username: string }
         Returns: boolean
       }
+      verify_password: {
+        Args: { password: string; password_hash: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "admin"
+      app_role: "admin" | "admin_utama"
       complaint_status: "pending" | "processing" | "completed"
+      user_status: "pending" | "active" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -300,8 +378,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: ["admin", "admin_utama"],
       complaint_status: ["pending", "processing", "completed"],
+      user_status: ["pending", "active", "rejected"],
     },
   },
 } as const

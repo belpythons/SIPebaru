@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, Clock, Loader2, CheckCircle, Users } from "lucide-react";
+import { FileText, Clock, Loader2 as LoaderIcon, CheckCircle, Users } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import StatCard from "@/components/StatCard";
 import ComplaintTrendsChart from "@/components/ComplaintTrendsChart";
@@ -109,8 +109,8 @@ const Dashboard = () => {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center h-[50vh]">
+          <LoaderIcon className="h-8 w-8 animate-spin text-primary" />
         </div>
       </AdminLayout>
     );
@@ -118,11 +118,11 @@ const Dashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <StatCard
             title="Total Pengaduan"
             value={stats.total}
@@ -138,7 +138,7 @@ const Dashboard = () => {
           <StatCard
             title="Sedang Diproses"
             value={stats.processing}
-            icon={Loader2}
+            icon={LoaderIcon}
             variant="info"
           />
           <StatCard
@@ -150,7 +150,7 @@ const Dashboard = () => {
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <ComplaintTrendsChart />
           <ComplaintBarChart />
         </div>
@@ -158,11 +158,11 @@ const Dashboard = () => {
         {/* Monthly Statistics Table */}
         <MonthlyStatsTable />
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
           {/* Recent Reports */}
           <Card className="xl:col-span-2 shadow-card">
             <CardHeader>
-              <CardTitle className="text-lg">Pengaduan Terbaru</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Pengaduan Terbaru</CardTitle>
             </CardHeader>
             <CardContent>
               {recentComplaints.length === 0 ? (
@@ -172,7 +172,7 @@ const Dashboard = () => {
               ) : (
                 <>
                   {/* Desktop Table View */}
-                  <div className="hidden md:block">
+                  <div className="hidden lg:block">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -204,23 +204,23 @@ const Dashboard = () => {
                   </div>
 
                   {/* Mobile Card View */}
-                  <div className="md:hidden space-y-3">
+                  <div className="lg:hidden space-y-2 sm:space-y-3">
                     {recentComplaints.map((complaint) => (
-                      <div key={complaint.id} className="p-3 border rounded-lg space-y-2 bg-muted/30">
+                      <div key={complaint.id} className="p-2 sm:p-3 border rounded-lg space-y-1.5 sm:space-y-2 bg-muted/30">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-primary text-sm">{complaint.ticket_number}</span>
+                          <span className="font-semibold text-primary text-xs sm:text-sm truncate max-w-[140px] sm:max-w-none">{complaint.ticket_number}</span>
                           <Badge variant={statusVariants[complaint.status]} className="text-xs">
                             {statusLabels[complaint.status]}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-2 gap-1 text-sm">
+                        <div className="grid grid-cols-2 gap-1 text-xs sm:text-sm">
                           <div>
                             <p className="text-muted-foreground text-xs">Pelapor</p>
-                            <p className="font-medium truncate">{complaint.reporter_name}</p>
+                            <p className="font-medium truncate text-xs sm:text-sm">{complaint.reporter_name}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground text-xs">Departemen</p>
-                            <p className="font-medium truncate">{complaint.department}</p>
+                            <p className="font-medium truncate text-xs sm:text-sm">{complaint.department}</p>
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground">{formatDate(complaint.reported_at)}</p>
@@ -234,17 +234,17 @@ const Dashboard = () => {
 
           {/* Admin Count */}
           <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="text-lg">Akun Admin</CardTitle>
+            <CardHeader className="pb-2 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Akun Admin</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-center py-8">
+              <div className="flex items-center justify-center py-4 sm:py-8">
                 <div className="text-center">
-                  <div className="p-4 bg-primary/10 rounded-full inline-block mb-4">
-                    <Users className="h-8 w-8 text-primary" />
+                  <div className="p-3 sm:p-4 bg-primary/10 rounded-full inline-block mb-2 sm:mb-4">
+                    <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                   </div>
-                  <p className="text-4xl font-bold text-foreground">{stats.adminCount}</p>
-                  <p className="text-muted-foreground mt-1">Total Admin</p>
+                  <p className="text-2xl sm:text-4xl font-bold text-foreground">{stats.adminCount}</p>
+                  <p className="text-sm sm:text-base text-muted-foreground mt-1">Total Admin</p>
                 </div>
               </div>
             </CardContent>

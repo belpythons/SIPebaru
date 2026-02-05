@@ -3,8 +3,7 @@ import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Ticket } from "lucide-react";
-import { Loader2, Upload, X, CheckCircle, Search, Ticket as TicketIcon } from "lucide-react";
+ import { Loader2, Upload, X, CheckCircle, Search, Ticket as TicketIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+
+// Allowed MIME types and their corresponding extensions
+const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+};
 
 const formSchema = z.object({
   reporter_name: z
@@ -128,6 +135,23 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate MIME type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Format tidak valid",
+          description: "Hanya file gambar yang diperbolehkan",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!ALLOWED_IMAGE_TYPES[file.type]) {
+        toast({
+          title: "Format tidak valid",
+          description: "Format gambar yang didukung: JPG, PNG, GIF, WEBP",
+          variant: "destructive",
+        });
+        return;
+      }
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "File terlalu besar",
@@ -174,7 +198,8 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
 
       // Upload photo if exists
       if (photoFile) {
-        const fileExt = photoFile.name.split(".").pop();
+        // Use MIME type to determine extension (secure)
+        const fileExt = ALLOWED_IMAGE_TYPES[photoFile.type] || 'jpg';
         const fileName = `${ticketData}-${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage

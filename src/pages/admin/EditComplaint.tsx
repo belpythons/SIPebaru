@@ -18,6 +18,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+// Allowed MIME types and their corresponding extensions
+const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+};
+
 interface Complaint {
   id: string;
   ticket_number: string;
@@ -150,6 +158,23 @@ const EditComplaint = () => {
   const handleCompletionPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate MIME type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Format tidak valid",
+          description: "Hanya file gambar yang diperbolehkan",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!ALLOWED_IMAGE_TYPES[file.type]) {
+        toast({
+          title: "Format tidak valid",
+          description: "Format gambar yang didukung: JPG, PNG, GIF, WEBP",
+          variant: "destructive",
+        });
+        return;
+      }
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "File terlalu besar",
@@ -178,7 +203,8 @@ const EditComplaint = () => {
   const uploadCompletionPhoto = async (): Promise<string | null> => {
     if (!completionPhoto || !id) return complaint?.completion_photo_url || null;
 
-    const fileExt = completionPhoto.name.split(".").pop();
+    // Use MIME type to determine extension (secure)
+    const fileExt = ALLOWED_IMAGE_TYPES[completionPhoto.type] || 'jpg';
     const fileName = `completion-${id}-${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage

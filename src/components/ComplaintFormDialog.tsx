@@ -191,13 +191,8 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
 
         if (uploadError) throw uploadError;
 
-        // Use signed URL for secure access (1 hour expiry)
-        const { data: urlData, error: urlError } = await supabase.storage
-          .from("complaint-photos")
-          .createSignedUrl(fileName, 3600);
-
-        if (urlError) throw urlError;
-        photoUrl = urlData.signedUrl;
+        // Store the file path, not the signed URL (signed URLs expire)
+        photoUrl = fileName;
       }
 
       const { error } = await supabase.from("complaints").insert({

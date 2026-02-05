@@ -184,7 +184,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      sipebaru_users_safe: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          fid: number | null
+          nama: string | null
+          npk: string | null
+          rfid: string | null
+          status: Database["public"]["Enums"]["user_status"] | null
+          unit_kerja: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          fid?: number | null
+          nama?: string | null
+          npk?: string | null
+          rfid?: string | null
+          status?: Database["public"]["Enums"]["user_status"] | null
+          unit_kerja?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          fid?: number | null
+          nama?: string | null
+          npk?: string | null
+          rfid?: string | null
+          status?: Database["public"]["Enums"]["user_status"] | null
+          unit_kerja?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       authenticate_sipebaru_user: {

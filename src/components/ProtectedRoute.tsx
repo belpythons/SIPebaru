@@ -15,12 +15,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        // Check if user has admin or admin_utama role
+        // Check if user has admin role
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
-          .in("role", ["admin", "admin_utama"])
+          .eq("role", "admin")
           .maybeSingle();
 
         setIsAuthenticated(!!roleData);

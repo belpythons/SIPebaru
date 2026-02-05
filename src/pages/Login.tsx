@@ -47,23 +47,6 @@ const Login = () => {
         throw new Error("Anda tidak memiliki akses admin");
       }
 
-      // Check profile status
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("status")
-        .eq("user_id", data.user.id)
-        .single();
-
-      if (profileData?.status === "pending") {
-        await supabase.auth.signOut();
-        throw new Error("Akun Anda menunggu aktivasi oleh Admin Utama");
-      }
-
-      if (profileData?.status === "rejected") {
-        await supabase.auth.signOut();
-        throw new Error("Akun Anda telah ditolak oleh Admin Utama");
-      }
-
       toast({
         title: "Login berhasil",
         description: "Selamat datang di panel admin SIPebaru",
@@ -169,13 +152,6 @@ const Login = () => {
                   <LogIn className="h-4 w-4" />
                   {isLoading ? "Memproses..." : "Login"}
                 </Button>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Belum punya akun?{" "}
-                  <Link to="/admin/signup" className="text-primary hover:underline font-medium">
-                    Daftar di sini
-                  </Link>
-                </p>
               </form>
             </CardContent>
           </Card>

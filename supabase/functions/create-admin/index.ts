@@ -202,14 +202,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create profile for the new user (status: active since created by admin)
+    // Create profile for the new user
     const { error: profileError } = await adminClient
       .from("profiles")
       .insert({
         user_id: newUserData.user.id,
         username: username!.trim(),
-        email: email!.trim(),
-        status: "active", // Directly active since created by existing admin
       });
 
     if (profileError) {

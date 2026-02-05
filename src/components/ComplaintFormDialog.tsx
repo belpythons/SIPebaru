@@ -181,7 +181,9 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
       if (photoFile) {
         // Use MIME type to determine extension (secure)
         const fileExt = ALLOWED_IMAGE_TYPES[photoFile.type] || 'jpg';
-        const fileName = `${ticketData}-${Date.now()}.${fileExt}`;
+        // Replace slashes in ticket number to avoid path issues in storage
+        const safeTicketNumber = ticketData.replace(/\//g, '-');
+        const fileName = `${safeTicketNumber}-${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from("complaint-photos")

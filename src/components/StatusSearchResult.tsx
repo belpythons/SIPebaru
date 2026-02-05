@@ -5,6 +5,7 @@ import { Package, Building2, Calendar, FileText, Clock, CheckCircle, Camera } fr
 
 interface Complaint {
   ticket_number: string;
+  complaint_code?: string;
   item_name: string;
   department: string;
   kompartemen: string | null;
@@ -56,12 +57,17 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
       <CardHeader className="pb-2 sm:pb-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base sm:text-lg font-semibold truncate">
-            {complaint.ticket_number}
+            Kode: {complaint.complaint_code || complaint.ticket_number}
           </CardTitle>
           <Badge className={config.color} variant="outline">
             {config.label}
           </Badge>
         </div>
+        {complaint.complaint_code && (
+          <p className="text-xs text-muted-foreground mt-1">
+            No. Urut: {complaint.ticket_number}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-3 sm:space-y-4">
         <div className="space-y-2 sm:space-y-3">

@@ -239,6 +239,7 @@ export type Database = {
       get_complaint_status: {
         Args: { ticket_num: string }
         Returns: {
+          complaint_code: string
           completed_at: string
           completion_photo_url: string
           department: string

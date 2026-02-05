@@ -10,6 +10,7 @@ import { StatusSearchResult } from "@/components/StatusSearchResult";
 
 interface ComplaintResult {
   ticket_number: string;
+  complaint_code: string;
   item_name: string;
   department: string;
   kompartemen: string | null;
@@ -58,6 +59,7 @@ const Home = () => {
         const result = data[0];
         setSearchResult({
           ticket_number: result.ticket_number,
+          complaint_code: result.complaint_code,
           item_name: result.item_name,
           department: result.department,
           kompartemen: result.kompartemen,
@@ -161,11 +163,12 @@ const Home = () => {
             
             <div className="flex flex-col sm:flex-row gap-2">
               <Input
-                placeholder="Masukkan Nomor Pengaduan Anda Disini"
+                placeholder="Masukkan Kode Pengaduan (5 karakter)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="text-center text-base sm:text-lg h-11 sm:h-12"
+                maxLength={5}
               />
               <Button
                 onClick={handleSearch}

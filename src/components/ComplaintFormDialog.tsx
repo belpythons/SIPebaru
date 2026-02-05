@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
- import { Loader2, Upload, X, CheckCircle, Search, Ticket as TicketIcon } from "lucide-react";
+  import { Loader2, Upload, X, CheckCircle, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,7 @@ interface ComplaintFormDialogProps {
 
 interface SubmissionResult {
   ticketNumber: string;
+  complaintCode: string;
 }
 
 export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogProps) {
@@ -75,32 +76,6 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [departmentSearch, setDepartmentSearch] = useState("");
   const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
-  const [nextTicketNumber, setNextTicketNumber] = useState<string | null>(null);
-  const [isLoadingTicket, setIsLoadingTicket] = useState(false);
-
-  // Fetch next ticket number when dialog opens using the RPC function
-  useEffect(() => {
-    const fetchNextTicketNumber = async () => {
-      if (open && !submissionResult) {
-        setIsLoadingTicket(true);
-        try {
-          // Call the generate_ticket_number function to preview the next number
-          const { data, error } = await supabase.rpc("generate_ticket_number");
-          
-          if (error) throw error;
-          
-          setNextTicketNumber(data);
-        } catch (error) {
-          console.error("Error fetching next ticket number:", error);
-          setNextTicketNumber(null);
-        } finally {
-          setIsLoadingTicket(false);
-        }
-      }
-    };
-
-    fetchNextTicketNumber();
-  }, [open, submissionResult]);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
@@ -181,7 +156,6 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
     setSubmissionResult(null);
     setDepartmentSearch("");
     setIsDepartmentOpen(false);
-    setNextTicketNumber(null);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -193,6 +167,13 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
       );
 
       if (ticketError) throw ticketError;
+
+      // Generate complaint code (5 alphanumeric characters)
+      const { data: codeData, error: codeError } = await supabase.rpc(
+        "generate_complaint_code" as any
+      );
+
+      if (codeError) throw codeError;
 
       let photoUrl: string | null = null;
 
@@ -219,6 +200,7 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
 
       const { error } = await supabase.from("complaints").insert({
         ticket_number: ticketData,
+        complaint_code: codeData,
         reporter_name: data.reporter_name.trim(),
         department: data.department.trim(),
         item_name: data.item_name.trim(),
@@ -231,7 +213,7 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
 
       if (error) throw error;
 
-      setSubmissionResult({ ticketNumber: ticketData });
+      setSubmissionResult({ ticketNumber: ticketData, complaintCode: codeData });
     } catch (error: any) {
       console.error("Error submitting complaint:", error);
       toast({
@@ -263,24 +245,32 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
             <h2 className="text-lg sm:text-xl font-bold text-foreground mb-1">
               Pengaduan Diterima!
             </h2>
-            <p className="text-sm text-muted-foreground mb-5">
+            <p className="text-sm text-muted-foreground mb-4">
               Pengaduan Anda telah berhasil diajukan
             </p>
             
-            {/* Ticket Number */}
-            <div className="w-full bg-muted/50 border border-border rounded-xl p-4 mb-4">
-              <p className="text-xs text-muted-foreground mb-2">Nomor Pengaduan Anda</p>
+            {/* Complaint Code */}
+            <div className="w-full bg-muted/50 border border-border rounded-xl p-4 mb-3">
+              <p className="text-xs text-muted-foreground mb-2">Kode Pengaduan Anda</p>
               <div className="bg-background border-2 border-primary/30 px-4 py-3 rounded-lg">
-                <p className="text-lg sm:text-xl font-bold text-primary break-all">
-                  {submissionResult.ticketNumber}
+                <p className="text-2xl sm:text-3xl font-bold text-primary tracking-widest">
+                  {submissionResult.complaintCode}
                 </p>
               </div>
+            </div>
+            
+            {/* Ticket Number (smaller) */}
+            <div className="w-full bg-muted/30 border border-border rounded-lg p-3 mb-4">
+              <p className="text-xs text-muted-foreground mb-1">Nomor Urut</p>
+              <p className="text-sm font-medium text-foreground break-all">
+                {submissionResult.ticketNumber}
+              </p>
             </div>
 
             {/* Important Note */}
             <div className="w-full bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 text-left">
               <p className="text-xs sm:text-sm text-amber-800">
-                <span className="font-semibold">📌 Penting:</span> Simpan nomor pengaduan ini untuk mengecek status pengaduan Anda kapan saja.
+                <span className="font-semibold">📌 Penting:</span> Simpan kode pengaduan <strong>{submissionResult.complaintCode}</strong> untuk mengecek status pengaduan Anda kapan saja.
               </p>
             </div>
             
@@ -301,22 +291,11 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
           <DialogTitle className="text-lg sm:text-xl">Ajukan Pengaduan Barang Rusak</DialogTitle>
         </DialogHeader>
         
-        {/* Display next ticket number */}
+        {/* Info about complaint code */}
         <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 sm:p-4 mb-2">
-          <div className="flex items-center gap-2 mb-1">
-            <TicketIcon className="h-4 w-4 text-primary" />
-            <span className="text-xs sm:text-sm text-muted-foreground">Nomor Pengaduan Anda</span>
-          </div>
-          {isLoadingTicket ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">Memuat...</span>
-            </div>
-          ) : (
-            <span className="text-xl sm:text-2xl font-bold text-primary tracking-wide">
-              {nextTicketNumber || "XXXX/ADKOR/Bln/Thn"}
-            </span>
-          )}
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Setelah pengaduan dikirim, Anda akan menerima <strong className="text-primary">Kode Pengaduan</strong> unik (5 karakter) yang dapat digunakan untuk melacak status pengaduan Anda.
+          </p>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">

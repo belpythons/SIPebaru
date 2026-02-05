@@ -24,6 +24,7 @@ import autoTable from "jspdf-autotable";
 interface Complaint {
   id: string;
   ticket_number: string;
+  complaint_code: string;
   reporter_name: string;
   department: string;
   item_name: string;
@@ -172,6 +173,7 @@ const Reports = () => {
     
     const headers = [
       "No",
+      "Kode",
       "No. Pengaduan",
       "Tanggal Lapor",
       "Tanggal Selesai",
@@ -185,6 +187,7 @@ const Reports = () => {
     
     const rows = filteredComplaints.map((c, index) => [
       index + 1,
+      c.complaint_code,
       c.ticket_number,
       formatDate(c.reported_at),
       c.processed_at ? formatDate(c.processed_at) : "-",
@@ -253,6 +256,7 @@ const Reports = () => {
     // Table
     const tableData = filteredComplaints.map((c, index) => [
       index + 1,
+      c.complaint_code,
       c.ticket_number,
       formatDate(c.reported_at),
       c.processed_at ? formatDate(c.processed_at) : "-",
@@ -267,6 +271,7 @@ const Reports = () => {
       startY: 33,
       head: [[
         "No",
+        "Kode",
         "No. Pengaduan",
         "Tgl Lapor",
         "Tgl Selesai",
@@ -289,14 +294,15 @@ const Reports = () => {
       },
       columnStyles: {
         0: { halign: "center", cellWidth: 10 },
-        1: { cellWidth: 30 },
-        2: { halign: "center", cellWidth: 22 },
-        3: { halign: "center", cellWidth: 22 },
-        4: { cellWidth: 35 },
-        5: { cellWidth: 30 },
-        6: { cellWidth: 40 },
-        7: { halign: "center", cellWidth: 12 },
-        8: { halign: "center", cellWidth: 28 },
+        1: { halign: "center", cellWidth: 15 },
+        2: { cellWidth: 28 },
+        3: { halign: "center", cellWidth: 20 },
+        4: { halign: "center", cellWidth: 20 },
+        5: { cellWidth: 32 },
+        6: { cellWidth: 28 },
+        7: { cellWidth: 35 },
+        8: { halign: "center", cellWidth: 12 },
+        9: { halign: "center", cellWidth: 25 },
       },
       alternateRowStyles: {
         fillColor: [245, 245, 245],
@@ -423,6 +429,7 @@ const Reports = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">No</TableHead>
+                    <TableHead>Kode</TableHead>
                     <TableHead>No. Pengaduan</TableHead>
                     <TableHead>Tanggal Lapor</TableHead>
                     <TableHead>Tanggal Selesai</TableHead>
@@ -436,7 +443,7 @@ const Reports = () => {
                 <TableBody>
                   {paginatedComplaints.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                         Tidak ada data dalam rentang tanggal ini
                       </TableCell>
                     </TableRow>
@@ -444,6 +451,7 @@ const Reports = () => {
                     paginatedComplaints.map((complaint, index) => (
                       <TableRow key={complaint.id}>
                         <TableCell className="text-center">{startIndex + index + 1}</TableCell>
+                        <TableCell className="font-mono text-sm">{complaint.complaint_code}</TableCell>
                         <TableCell className="font-medium">
                           {complaint.ticket_number}
                         </TableCell>
@@ -483,6 +491,7 @@ const Reports = () => {
                       </Badge>
                     </div>
                     <div className="font-semibold text-primary">{complaint.ticket_number}</div>
+                    <div className="text-xs font-mono text-muted-foreground">Kode: {complaint.complaint_code}</div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <p className="text-muted-foreground">Pelapor</p>

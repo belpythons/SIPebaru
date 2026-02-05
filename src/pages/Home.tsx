@@ -116,7 +116,7 @@ const Home = () => {
       <div className="relative z-10 flex flex-col min-h-screen">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="flex h-14 sm:h-16 items-center justify-between">
             {/* Logo & Brand */}
             <div className="flex items-center gap-2 sm:gap-3">

@@ -177,7 +177,7 @@ const Reports = () => {
       "No. Pengaduan",
       "Tanggal Lapor",
       "Tanggal Selesai",
-      "Nama Pelapor",
+      "Nama Pemohon",
       "Departemen",
       "Nama Barang",
       "Jumlah",
@@ -275,7 +275,7 @@ const Reports = () => {
         "No. Pengaduan",
         "Tgl Lapor",
         "Tgl Selesai",
-        "Nama Pelapor",
+        "Nama Pemohon",
         "Departemen",
         "Nama Barang",
         "Jml",
@@ -433,7 +433,7 @@ const Reports = () => {
                     <TableHead>No. Pengaduan</TableHead>
                     <TableHead>Tanggal Lapor</TableHead>
                     <TableHead>Tanggal Selesai</TableHead>
-                    <TableHead>Nama Pelapor</TableHead>
+                    <TableHead>Nama Pemohon</TableHead>
                     <TableHead>Departemen</TableHead>
                     <TableHead>Nama Barang</TableHead>
                     <TableHead className="text-center">Jumlah</TableHead>

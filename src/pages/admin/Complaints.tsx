@@ -265,7 +265,7 @@ const Complaints = () => {
               <TableHead>No. Urut</TableHead>
               <TableHead>Tanggal Lapor</TableHead>
               <TableHead>Tanggal Selesai</TableHead>
-              <TableHead>Nama Pelapor</TableHead>
+              <TableHead>Nama Pemohon</TableHead>
               <TableHead>Departemen</TableHead>
               <TableHead>Nama Barang</TableHead>
               <TableHead className="text-center">Jumlah</TableHead>

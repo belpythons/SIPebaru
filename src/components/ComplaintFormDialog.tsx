@@ -62,6 +62,7 @@ type FormData = z.infer<typeof formSchema>;
 interface ComplaintFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSubmitSuccess?: (result: SubmissionResult) => void;
 }
 
 interface SubmissionResult {
@@ -69,7 +70,7 @@ interface SubmissionResult {
   complaintCode: string;
 }
 
-export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogProps) {
+export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: ComplaintFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -224,6 +225,9 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
   };
 
   const handleClose = () => {
+    if (submissionResult && onSubmitSuccess) {
+      onSubmitSuccess(submissionResult);
+    }
     resetForm();
     onOpenChange(false);
   };

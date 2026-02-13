@@ -5,7 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, FileText, LogIn, Loader2, Package, ClipboardList, CheckCircle2, Clock, Send, Eye, X, Copy, CheckCircle } from "lucide-react";
-import { ComplaintFormDialog } from "@/components/ComplaintFormDialog";
+import { ComplaintFormDialog, type SubmissionResult } from "@/components/ComplaintFormDialog";
 import { StatusSearchResult } from "@/components/StatusSearchResult";
 import {
   Dialog,
@@ -39,7 +39,7 @@ const Home = () => {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSOPOpen, setIsSOPOpen] = useState(false);
-  const [lastSubmission, setLastSubmission] = useState<{ ticketNumber: string; complaintCode: string } | null>(null);
+  const [lastSubmission, setLastSubmission] = useState<SubmissionResult | null>(null);
   const [copied, setCopied] = useState(false);
 
   const sopSteps = [
@@ -196,6 +196,8 @@ const Home = () => {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground text-sm sm:text-base">Pengaduan Berhasil Dikirim!</h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Simpan kode ini untuk mengecek status pengaduan Anda</p>
+                  
+                  {/* Complaint Code + Copy */}
                   <div className="mt-3 flex items-center gap-2">
                     <div className="bg-background border-2 border-primary/30 px-4 py-2 rounded-lg">
                       <span className="text-xl sm:text-2xl font-bold text-primary tracking-widest">{lastSubmission.complaintCode}</span>
@@ -215,9 +217,43 @@ const Home = () => {
                       {copied ? "Tersalin" : "Salin"}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    No. Tiket: <span className="font-medium">{lastSubmission.ticketNumber}</span>
-                  </p>
+
+                  {/* Review Detail */}
+                  <div className="mt-4 bg-background/80 border border-border rounded-lg p-3 space-y-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ringkasan Pengaduan</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground text-xs">Nama Pemohon</span>
+                        <p className="font-medium text-foreground truncate">{lastSubmission.reporterName}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-xs">Departemen</span>
+                        <p className="font-medium text-foreground truncate">{lastSubmission.department}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-xs">Nama Barang</span>
+                        <p className="font-medium text-foreground truncate">{lastSubmission.itemName}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-xs">Tanggal Pengaduan</span>
+                        <p className="font-medium text-foreground">
+                          {new Date(lastSubmission.submittedAt).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground text-xs">Deskripsi Kerusakan</span>
+                      <p className="font-medium text-foreground text-sm line-clamp-3">{lastSubmission.description}</p>
+                    </div>
+                    <div className="pt-1">
+                      <span className="text-muted-foreground text-xs">No. Tiket</span>
+                      <p className="font-medium text-foreground text-xs">{lastSubmission.ticketNumber}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

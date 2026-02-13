@@ -65,9 +65,14 @@ interface ComplaintFormDialogProps {
   onSubmitSuccess?: (result: SubmissionResult) => void;
 }
 
-interface SubmissionResult {
+export interface SubmissionResult {
   ticketNumber: string;
   complaintCode: string;
+  reporterName: string;
+  department: string;
+  itemName: string;
+  description: string;
+  submittedAt: string;
 }
 
 export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: ComplaintFormDialogProps) {
@@ -211,7 +216,15 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
 
       if (error) throw error;
 
-      setSubmissionResult({ ticketNumber: ticketData, complaintCode: codeData });
+      setSubmissionResult({
+        ticketNumber: ticketData,
+        complaintCode: codeData,
+        reporterName: data.reporter_name.trim(),
+        department: data.department.trim(),
+        itemName: data.item_name.trim(),
+        description: data.description.trim(),
+        submittedAt: new Date().toISOString(),
+      });
     } catch (error: any) {
       console.error("Error submitting complaint:", error);
       toast({

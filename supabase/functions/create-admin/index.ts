@@ -208,6 +208,7 @@ Deno.serve(async (req) => {
       .insert({
         user_id: newUserData.user.id,
         username: username!.trim(),
+        email: email!.trim(),
       });
 
     if (profileError) {

@@ -63,26 +63,10 @@ function mapErrorToSafeMessage(error: Error | { message?: string }): string {
   return "Failed to create admin account";
 }
 
-// Get allowed origins for CORS
-function getAllowedOrigin(origin: string | null): string {
-  const allowedOrigins = [
-    Deno.env.get("SITE_URL"),
-    "https://id-preview--3407bea8-a3a5-43b5-b1e9-e4a4ec9a4e04.lovable.app",
-    "http://localhost:5173",
-    "http://localhost:8080",
-  ].filter(Boolean);
-  
-  if (origin && allowedOrigins.includes(origin)) {
-    return origin;
-  }
-  return allowedOrigins[0] || "*";
-}
-
-function getCorsHeaders(origin: string | null) {
+function getCorsHeaders(_origin: string | null) {
   return {
-    "Access-Control-Allow-Origin": getAllowedOrigin(origin),
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   };
 }
 

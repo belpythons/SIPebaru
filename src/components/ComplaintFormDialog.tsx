@@ -38,8 +38,8 @@ const formSchema = z.object({
   reporter_name: z
     .string()
     .trim()
-    .min(1, "Nama pelapor wajib diisi")
-    .max(120, "Nama pelapor maksimal 120 karakter"),
+    .min(1, "Nama pemohon wajib diisi")
+    .max(120, "Nama pemohon maksimal 120 karakter"),
   department: z
     .string()
     .trim()
@@ -301,7 +301,7 @@ export function ComplaintFormDialog({ open, onOpenChange }: ComplaintFormDialogP
               name="reporter_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nama Pelapor *</FormLabel>
+                  <FormLabel>Nama Pemohon *</FormLabel>
                   <FormControl>
                     <Input placeholder="Masukkan nama lengkap Anda" {...field} />
                   </FormControl>

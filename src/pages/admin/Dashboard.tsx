@@ -177,7 +177,7 @@ const Dashboard = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead>No. Pengaduan</TableHead>
-                          <TableHead>Nama Pelapor</TableHead>
+                          <TableHead>Nama Pemohon</TableHead>
                           <TableHead>Departemen</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Tanggal</TableHead>

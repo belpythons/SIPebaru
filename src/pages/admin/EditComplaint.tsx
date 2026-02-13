@@ -352,7 +352,7 @@ const EditComplaint = () => {
 
               {/* Editable Fields */}
               <div className="space-y-2">
-                <Label htmlFor="reporter_name">Nama Pelapor</Label>
+                <Label htmlFor="reporter_name">Nama Pemohon</Label>
                 <Input
                   id="reporter_name"
                   name="reporter_name"

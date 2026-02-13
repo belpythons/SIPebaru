@@ -37,6 +37,7 @@ interface Profile {
   id: string;
   user_id: string;
   username: string;
+  email: string | null;
   created_at: string;
 }
 
@@ -407,6 +408,7 @@ const Accounts = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Username</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Tanggal Dibuat</TableHead>
                     <TableHead className="text-center">Aksi</TableHead>
                   </TableRow>
@@ -414,7 +416,7 @@ const Accounts = () => {
                 <TableBody>
                   {profiles.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                         Belum ada akun admin
                       </TableCell>
                     </TableRow>
@@ -427,6 +429,7 @@ const Accounts = () => {
                             <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-muted-foreground">{profile.email || '-'}</TableCell>
                         <TableCell>{formatDate(profile.created_at)}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center gap-2">
@@ -479,7 +482,8 @@ const Accounts = () => {
                             <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>
                           )}
                         </p>
-                        <p className="text-sm text-muted-foreground">{formatDate(profile.created_at)}</p>
+                        <p className="text-sm text-muted-foreground">{profile.email || '-'}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(profile.created_at)}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">

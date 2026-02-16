@@ -30,6 +30,7 @@ interface Complaint {
   id: string;
   ticket_number: string;
   complaint_code?: string;
+  npk: string | null;
   reporter_name: string;
   department: string;
   kompartemen: string | null;
@@ -57,6 +58,7 @@ const EditComplaint = () => {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const completionPhotoRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
+    npk: "",
     reporter_name: "",
     department: "",
     item_name: "",
@@ -106,6 +108,7 @@ const EditComplaint = () => {
 
       setComplaint(data);
       setFormData({
+        npk: data.npk || "",
         reporter_name: data.reporter_name,
         department: data.department,
         item_name: data.item_name,
@@ -245,6 +248,7 @@ const EditComplaint = () => {
       const { error } = await supabase
         .from("complaints")
         .update({
+          npk: formData.npk.trim() || null,
           reporter_name: formData.reporter_name,
           department: formData.department,
           item_name: formData.item_name,
@@ -351,15 +355,26 @@ const EditComplaint = () => {
               </div>
 
               {/* Editable Fields */}
-              <div className="space-y-2">
-                <Label htmlFor="reporter_name">Nama Pemohon</Label>
-                <Input
-                  id="reporter_name"
-                  name="reporter_name"
-                  value={formData.reporter_name}
-                  onChange={handleInputChange}
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="npk">NPK</Label>
+                  <Input
+                    id="npk"
+                    name="npk"
+                    value={formData.npk}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reporter_name">Nama Pemohon</Label>
+                  <Input
+                    id="reporter_name"
+                    name="reporter_name"
+                    value={formData.reporter_name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

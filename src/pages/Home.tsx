@@ -221,22 +221,26 @@ const Home = () => {
                   {/* Review Detail */}
                   <div className="mt-4 bg-background/80 border border-border rounded-lg p-3 space-y-2">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ringkasan Pengaduan</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground text-xs">Nama Pemohon</span>
-                        <p className="font-medium text-foreground truncate">{lastSubmission.reporterName}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground text-xs">Departemen</span>
-                        <p className="font-medium text-foreground truncate">{lastSubmission.department}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground text-xs">Nama Barang</span>
-                        <p className="font-medium text-foreground truncate">{lastSubmission.itemName}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground text-xs">Tanggal Pengaduan</span>
-                        <p className="font-medium text-foreground">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                       <div>
+                         <span className="text-muted-foreground text-xs">NPK</span>
+                         <p className="font-medium text-foreground truncate">{lastSubmission.npk}</p>
+                       </div>
+                       <div>
+                         <span className="text-muted-foreground text-xs">Nama Pemohon</span>
+                         <p className="font-medium text-foreground truncate">{lastSubmission.reporterName}</p>
+                       </div>
+                       <div>
+                         <span className="text-muted-foreground text-xs">Departemen</span>
+                         <p className="font-medium text-foreground truncate">{lastSubmission.department}</p>
+                       </div>
+                       <div>
+                         <span className="text-muted-foreground text-xs">Nama Barang</span>
+                         <p className="font-medium text-foreground truncate">{lastSubmission.itemName}</p>
+                       </div>
+                       <div>
+                         <span className="text-muted-foreground text-xs">Tanggal Pengaduan</span>
+                         <p className="font-medium text-foreground">
                           {new Date(lastSubmission.submittedAt).toLocaleDateString("id-ID", {
                             day: "numeric",
                             month: "long",

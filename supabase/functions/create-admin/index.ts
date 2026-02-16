@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse the request body
-    let body: { email?: string; password?: string; username?: string };
+    let body: { email?: string; password?: string; username?: string; npk?: string };
     try {
       body = await req.json();
     } catch {
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, username } = body;
+    const { email, password, username, npk } = body;
 
     // Comprehensive input validation
     const emailValidation = validateEmail(email || "");
@@ -192,6 +192,7 @@ Deno.serve(async (req) => {
       .insert({
         user_id: newUserData.user.id,
         username: username!.trim(),
+        npk: npk?.trim() || null,
         email: email!.trim(),
       });
 

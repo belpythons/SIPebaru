@@ -44,6 +44,11 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
 const SAFE_TEXT_REGEX = /^[a-zA-Z0-9\s.,!?()':"\\/\-]+$/;
 
 const formSchema = z.object({
+  npk: z
+    .string()
+    .trim()
+    .min(1, "NPK wajib diisi")
+    .max(50, "NPK maksimal 50 karakter"),
   reporter_name: z
     .string()
     .trim()
@@ -82,6 +87,7 @@ interface ComplaintFormDialogProps {
 export interface SubmissionResult {
   ticketNumber: string;
   complaintCode: string;
+  npk: string;
   reporterName: string;
   department: string;
   itemName: string;
@@ -130,6 +136,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      npk: "",
       reporter_name: "",
       department: "",
       item_name: "",
@@ -244,6 +251,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
       const { error } = await supabase.from("complaints").insert({
         ticket_number: ticketData,
         complaint_code: codeData,
+        npk: data.npk.trim(),
         reporter_name: data.reporter_name.trim(),
         department: data.department.trim(),
         item_name: data.item_name.trim(),
@@ -259,6 +267,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
       setSubmissionResult({
         ticketNumber: ticketData,
         complaintCode: codeData,
+        npk: data.npk.trim(),
         reporterName: data.reporter_name.trim(),
         department: data.department.trim(),
         itemName: data.item_name.trim(),
@@ -356,6 +365,20 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
+            <FormField
+              control={form.control}
+              name="npk"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>NPK *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Masukkan NPK Anda" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="reporter_name"

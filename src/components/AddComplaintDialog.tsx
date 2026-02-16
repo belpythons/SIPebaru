@@ -53,6 +53,11 @@ import {
 } from "@/components/ui/select";
 
 const formSchema = z.object({
+  npk: z
+    .string()
+    .trim()
+    .min(1, "NPK wajib diisi")
+    .max(50, "NPK maksimal 50 karakter"),
   reporter_name: z
     .string()
     .trim()
@@ -118,6 +123,7 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      npk: "",
       reporter_name: "",
       department: "",
       item_name: "",
@@ -213,6 +219,7 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
       const { error } = await supabase.from("complaints").insert({
         ticket_number: ticketData,
         complaint_code: codeData,
+        npk: data.npk.trim(),
         reporter_name: data.reporter_name.trim(),
         department: data.department.trim(),
         item_name: data.item_name.trim(),
@@ -271,6 +278,20 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="npk"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>NPK</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Masukkan NPK" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="reporter_name"

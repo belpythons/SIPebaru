@@ -68,6 +68,7 @@ export type Database = {
           id: string
           item_name: string
           kompartemen: string | null
+          npk: string | null
           photo_url: string | null
           processed_at: string | null
           quantity: number
@@ -88,6 +89,7 @@ export type Database = {
           id?: string
           item_name: string
           kompartemen?: string | null
+          npk?: string | null
           photo_url?: string | null
           processed_at?: string | null
           quantity?: number
@@ -108,6 +110,7 @@ export type Database = {
           id?: string
           item_name?: string
           kompartemen?: string | null
+          npk?: string | null
           photo_url?: string | null
           processed_at?: string | null
           quantity?: number
@@ -145,6 +148,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          npk: string | null
           status: string
           updated_at: string
           user_id: string
@@ -154,6 +158,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          npk?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -163,6 +168,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          npk?: string | null
           status?: string
           updated_at?: string
           user_id?: string

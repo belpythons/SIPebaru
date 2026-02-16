@@ -31,6 +31,7 @@ interface Complaint {
   id: string;
   ticket_number: string;
   complaint_code?: string;
+  npk: string | null;
   reporter_name: string;
   department: string;
   kompartemen: string | null;
@@ -58,6 +59,7 @@ const EditComplaint = () => {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const completionPhotoRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
+    npk: "",
     reporter_name: "",
     department: "",
     item_name: "",
@@ -111,6 +113,7 @@ const EditComplaint = () => {
 
       setComplaint(data);
       setFormData({
+        npk: data.npk || "",
         reporter_name: data.reporter_name,
         department: data.department,
         item_name: data.item_name,
@@ -261,6 +264,7 @@ const EditComplaint = () => {
       const { error } = await supabase
         .from("complaints")
         .update({
+          npk: formData.npk.trim() || null,
           reporter_name: formData.reporter_name,
           department: formData.department,
           item_name: formData.item_name,

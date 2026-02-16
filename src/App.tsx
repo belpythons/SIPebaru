@@ -17,6 +17,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
+/**
+ * RBAC Route Configuration:
+ * - Dashboard, Complaints, Reports: accessible by admin, super_admin, AND viewer
+ * - EditComplaint: accessible by admin, super_admin, AND viewer (viewer gets read-only mode)
+ * - Accounts, Departments: admin + super_admin only (management functions)
+ */
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -24,15 +30,63 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/admin/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
-          <Route path="/admin/complaints/:id" element={<ProtectedRoute><EditComplaint /></ProtectedRoute>} />
-          <Route path="/admin/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-          <Route path="/admin/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
-          <Route path="/admin/departments" element={<ProtectedRoute><Departments /></ProtectedRoute>} />
+
+          {/* Admin routes — viewer can access (read-only UI enforced in components) */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "super_admin", "viewer"]}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/complaints"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "super_admin", "viewer"]}>
+                <Complaints />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/complaints/:id"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "super_admin", "viewer"]}>
+                <EditComplaint />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reports"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "super_admin", "viewer"]}>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Management routes — admin + super_admin only */}
+          <Route
+            path="/admin/accounts"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                <Accounts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/departments"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                <Departments />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

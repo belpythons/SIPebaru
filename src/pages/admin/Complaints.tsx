@@ -38,6 +38,7 @@ interface Complaint {
   id: string;
   ticket_number: string;
   complaint_code?: string;
+  npk?: string;
   reporter_name: string;
   department: string;
   item_name: string;
@@ -208,6 +209,10 @@ const Complaints = () => {
       </div>
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div>
+          <p className="text-muted-foreground">NPK</p>
+          <p className="font-medium truncate">{complaint.npk || "-"}</p>
+        </div>
+        <div>
           <p className="text-muted-foreground">Pelapor</p>
           <p className="font-medium truncate">{complaint.reporter_name}</p>
         </div>
@@ -265,6 +270,7 @@ const Complaints = () => {
               <TableHead>No. Urut</TableHead>
               <TableHead>Tanggal Lapor</TableHead>
               <TableHead>Tanggal Selesai</TableHead>
+              <TableHead>NPK</TableHead>
               <TableHead>Nama Pemohon</TableHead>
               <TableHead>Departemen</TableHead>
               <TableHead>Nama Barang</TableHead>
@@ -276,7 +282,7 @@ const Complaints = () => {
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                 <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                   {searchQuery ? "Tidak ada data yang cocok" : "Tidak ada data"}
                 </TableCell>
               </TableRow>
@@ -289,6 +295,7 @@ const Complaints = () => {
                   <TableCell>
                     {complaint.processed_at ? formatDate(complaint.processed_at) : "-"}
                   </TableCell>
+                  <TableCell>{complaint.npk || "-"}</TableCell>
                   <TableCell>{complaint.reporter_name}</TableCell>
                   <TableCell>{complaint.department}</TableCell>
                   <TableCell>{complaint.item_name}</TableCell>

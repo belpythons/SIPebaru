@@ -37,6 +37,7 @@ interface Profile {
   id: string;
   user_id: string;
   username: string;
+  npk: string | null;
   email: string | null;
   created_at: string;
 }
@@ -51,6 +52,7 @@ const Accounts = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
+    npk: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -94,6 +96,7 @@ const Accounts = () => {
   const resetForm = () => {
     setFormData({
       username: "",
+      npk: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -106,6 +109,7 @@ const Accounts = () => {
       setSelectedProfile(profile);
       setFormData({
         username: profile.username,
+        npk: profile.npk || "",
         email: "",
         password: "",
         confirmPassword: "",
@@ -158,10 +162,10 @@ const Accounts = () => {
 
     try {
       if (selectedProfile) {
-        // Update existing profile - username
+        // Update existing profile - username and npk
         const { error: profileError } = await supabase
           .from("profiles")
-          .update({ username: formData.username })
+          .update({ username: formData.username, npk: formData.npk.trim() || null })
           .eq("id", selectedProfile.id);
 
         if (profileError) throw profileError;
@@ -210,6 +214,7 @@ const Accounts = () => {
             email: formData.email,
             password: formData.password,
             username: formData.username,
+            npk: formData.npk.trim() || null,
           },
         });
 
@@ -336,6 +341,18 @@ const Accounts = () => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="npk">NPK *</Label>
+                  <Input
+                    id="npk"
+                    name="npk"
+                    value={formData.npk}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Masukkan NPK"
+                  />
+                </div>
+
                 {!selectedProfile && (
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -406,17 +423,18 @@ const Accounts = () => {
             <div className="hidden md:block">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Tanggal Dibuat</TableHead>
-                    <TableHead className="text-center">Aksi</TableHead>
-                  </TableRow>
+                   <TableRow>
+                     <TableHead>Username</TableHead>
+                     <TableHead>NPK</TableHead>
+                     <TableHead>Email</TableHead>
+                     <TableHead>Tanggal Dibuat</TableHead>
+                     <TableHead className="text-center">Aksi</TableHead>
+                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {profiles.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                     <TableRow>
+                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         Belum ada akun admin
                       </TableCell>
                     </TableRow>
@@ -429,6 +447,7 @@ const Accounts = () => {
                             <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-muted-foreground">{profile.npk || '-'}</TableCell>
                         <TableCell className="text-muted-foreground">{profile.email || '-'}</TableCell>
                         <TableCell>{formatDate(profile.created_at)}</TableCell>
                         <TableCell className="text-center">
@@ -482,8 +501,9 @@ const Accounts = () => {
                             <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>
                           )}
                         </p>
-                        <p className="text-sm text-muted-foreground">{profile.email || '-'}</p>
-                        <p className="text-xs text-muted-foreground">{formatDate(profile.created_at)}</p>
+                         <p className="text-sm text-muted-foreground">{profile.npk || 'NPK: -'}</p>
+                         <p className="text-sm text-muted-foreground">{profile.email || '-'}</p>
+                         <p className="text-xs text-muted-foreground">{formatDate(profile.created_at)}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">

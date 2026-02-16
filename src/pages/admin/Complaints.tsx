@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Loader2, Edit, Search, ChevronLeft, ChevronRight, Trash2, CalendarIcon, X } from "lucide-react";
+import { Loader2, Edit, Search, ChevronLeft, ChevronRight, Trash2, CalendarIcon, X, Eye } from "lucide-react";
 import AddComplaintDialog from "@/components/AddComplaintDialog";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useUserRole, canWriteComplaints } from "@/hooks/useUserRole";
 
 interface Complaint {
   id: string;
@@ -73,6 +74,10 @@ const Complaints = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [complaintToDelete, setComplaintToDelete] = useState<Complaint | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Role-based UI control — viewers see read-only interface
+  const { role } = useUserRole();
+  const canWrite = canWriteComplaints(role);
 
   const fetchComplaints = useCallback(async () => {
     try {
@@ -232,24 +237,39 @@ const Complaints = () => {
           <p className="font-medium">{complaint.processed_at ? formatDate(complaint.processed_at) : "-"}</p>
         </div>
       </div>
+      {/* Action buttons — hidden for viewer role (read-only access) */}
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
-          className="flex-1 gap-1"
-        >
-          <Edit className="h-4 w-4" />
-          Edit
-        </Button>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => handleDeleteClick(complaint)}
-          className="gap-1"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {canWrite ? (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+              className="flex-1 gap-1"
+            >
+              <Edit className="h-4 w-4" />
+              Edit
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDeleteClick(complaint)}
+              className="gap-1"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+            className="flex-1 gap-1"
+          >
+            <Eye className="h-4 w-4" />
+            Lihat Detail
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -300,23 +320,38 @@ const Complaints = () => {
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
-                        className="gap-1"
-                      >
-                        <Edit className="h-4 w-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteClick(complaint)}
-                        className="gap-1"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {/* Action buttons — conditionally rendered based on role */}
+                      {canWrite ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+                            className="gap-1"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteClick(complaint)}
+                            className="gap-1"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+                          className="gap-1"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Lihat
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -400,9 +435,20 @@ const Complaints = () => {
                 <X className="h-4 w-4" />
               </Button>
             )}
-            <AddComplaintDialog onSuccess={fetchComplaints} />
+            {/* Add Complaint button — hidden for viewer role */}
+            {canWrite && <AddComplaintDialog onSuccess={fetchComplaints} />}
           </div>
         </div>
+
+        {/* Read-only banner for viewer role */}
+        {!canWrite && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
+            <Eye className="h-4 w-4 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-800">
+              Anda login sebagai <strong>Viewer</strong>. Anda hanya dapat melihat data, tidak dapat mengedit atau menghapus.
+            </p>
+          </div>
+        )}
 
         <Card className="shadow-card">
           <CardHeader className="pb-0">
@@ -487,7 +533,7 @@ const Complaints = () => {
                       )
                     )}
                   </div>
-                  
+
                   <span className="sm:hidden text-sm text-muted-foreground">
                     {currentPage}/{totalPages}
                   </span>
@@ -509,37 +555,39 @@ const Complaints = () => {
         </Card>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus pengaduan{" "}
-              <span className="font-semibold">{complaintToDelete?.ticket_number}</span>?
-              <br />
-              Tindakan ini tidak dapat dibatalkan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Menghapus...
-                </>
-              ) : (
-                "Hapus"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete Confirmation Dialog — only rendered for write-capable roles */}
+      {canWrite && (
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+              <AlertDialogDescription>
+                Apakah Anda yakin ingin menghapus pengaduan{" "}
+                <span className="font-semibold">{complaintToDelete?.ticket_number}</span>?
+                <br />
+                Tindakan ini tidak dapat dibatalkan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Menghapus...
+                  </>
+                ) : (
+                  "Hapus"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </AdminLayout>
   );
 };

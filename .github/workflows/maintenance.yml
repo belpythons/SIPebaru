@@ -1,0 +1,73 @@
+name: Daily Maintenance (Keep-Alive & Backup)
+
+on:
+  schedule:
+    # Jalan setiap jam 02:00 pagi WIB (19:00 UTC)
+    - cron: '0 19 * * *'
+  workflow_dispatch: # Bisa dijalankan manual tombol klik
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install @supabase/supabase-js
+
+      - name: Run Keep-Alive & Fetch Backup
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }} # Gunakan Service Role Key (JANGAN ANON KEY)
+        run: |
+          node -e "
+            const { createClient } = require('@supabase/supabase-js');
+            const fs = require('fs');
+            
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+            
+            async function run() {
+              console.log('Starting maintenance...');
+              
+              // 1. Keep-Alive Query (Simple Ping)
+              const { data: ping, error: pingError } = await supabase.from('profiles').select('count').limit(1).single();
+              if (pingError) console.error('Ping Error:', pingError);
+              else console.log('Database Ping Success.');
+
+              // 2. Light Backup (Fetch Data as JSON)
+              // Only backup crucial tables
+              const tables = ['complaints', 'user_roles', 'profiles'];
+              const backupData = {};
+
+              for (const table of tables) {
+                const { data, error } = await supabase.from(table).select('*');
+                if (error) {
+                  console.error(\`Backup failed for \${table}:\`, error);
+                } else {
+                  backupData[table] = data;
+                  console.log(\`Backup \${table}: \${data.length} rows fetched.\`);
+                }
+              }
+
+              // Save to JSON file
+              const dateStr = new Date().toISOString().split('T')[0];
+              const fileName = \`backup-\${dateStr}.json\`;
+              fs.writeFileSync(fileName, JSON.stringify(backupData, null, 2));
+              console.log(\`Backup saved to \${fileName}\`);
+            }
+            
+            run();
+          "
+
+      - name: Upload Backup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-backup-json
+          path: backup-*.json
+          retention-days: 7 # Simpan backup selama 7 hari di GitHub

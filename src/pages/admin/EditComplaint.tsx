@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Save, ArrowLeft, Upload, X, ImageIcon } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Upload, X, ImageIcon, Eye } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole, canWriteComplaints } from "@/hooks/useUserRole";
 
 // Allowed MIME types and their corresponding extensions
 const ALLOWED_IMAGE_TYPES: Record<string, string> = {
@@ -67,6 +68,10 @@ const EditComplaint = () => {
     processed_at: "",
     completed_at: "",
   });
+
+  // Role-based access — viewers see read-only mode
+  const { role } = useUserRole();
+  const canWrite = canWriteComplaints(role);
 
   useEffect(() => {
     fetchComplaint();
@@ -225,6 +230,17 @@ const EditComplaint = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Security guard — block write operations for viewer role
+    if (!canWrite) {
+      toast({
+        title: "Akses ditolak",
+        description: "Anda tidak memiliki izin untuk mengubah data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -317,8 +333,20 @@ const EditComplaint = () => {
             <ArrowLeft className="h-4 w-4" />
             Kembali
           </Button>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Edit Pengaduan</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            {canWrite ? "Edit Pengaduan" : "Detail Pengaduan"}
+          </h1>
         </div>
+
+        {/* Read-only banner for viewer role */}
+        {!canWrite && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
+            <Eye className="h-4 w-4 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-800">
+              Anda login sebagai <strong>Viewer</strong>. Halaman ini dalam mode baca saja.
+            </p>
+          </div>
+        )}
 
         <Card className="shadow-card">
           <CardHeader>
@@ -350,7 +378,7 @@ const EditComplaint = () => {
                 </div>
               </div>
 
-              {/* Editable Fields */}
+              {/* Editable Fields — disabled for viewer role */}
               <div className="space-y-2">
                 <Label htmlFor="reporter_name">Nama Pemohon</Label>
                 <Input
@@ -359,12 +387,17 @@ const EditComplaint = () => {
                   value={formData.reporter_name}
                   onChange={handleInputChange}
                   required
+                  disabled={!canWrite}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="department">Departemen</Label>
-                <Select value={formData.department} onValueChange={handleDepartmentChange}>
+                <Select
+                  value={formData.department}
+                  onValueChange={handleDepartmentChange}
+                  disabled={!canWrite}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih departemen" />
                   </SelectTrigger>
@@ -382,9 +415,9 @@ const EditComplaint = () => {
               {complaint.photo_url && (
                 <div className="space-y-2">
                   <Label>Foto Barang Rusak</Label>
-                  <img 
-                    src={complaint.photo_url} 
-                    alt="Foto barang rusak" 
+                  <img
+                    src={complaint.photo_url}
+                    alt="Foto barang rusak"
                     className="w-full max-w-sm rounded-lg border"
                   />
                 </div>
@@ -399,6 +432,7 @@ const EditComplaint = () => {
                     value={formData.item_name}
                     onChange={handleInputChange}
                     required
+                    disabled={!canWrite}
                   />
                 </div>
                 <div className="space-y-2">
@@ -411,6 +445,7 @@ const EditComplaint = () => {
                     value={formData.quantity}
                     onChange={handleInputChange}
                     required
+                    disabled={!canWrite}
                   />
                 </div>
               </div>
@@ -423,6 +458,7 @@ const EditComplaint = () => {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows={3}
+                  disabled={!canWrite}
                 />
               </div>
 
@@ -432,7 +468,11 @@ const EditComplaint = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={handleStatusChange}>
+                <Select
+                  value={formData.status}
+                  onValueChange={handleStatusChange}
+                  disabled={!canWrite}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -453,7 +493,7 @@ const EditComplaint = () => {
                     type="date"
                     value={formData.processed_at}
                     onChange={handleInputChange}
-                    disabled={formData.status === "pending"}
+                    disabled={!canWrite || formData.status === "pending"}
                   />
                   {formData.status === "pending" && (
                     <p className="text-xs text-muted-foreground">Ubah status ke "Sedang Diproses" untuk mengisi tanggal</p>
@@ -467,7 +507,7 @@ const EditComplaint = () => {
                     type="date"
                     value={formData.completed_at}
                     onChange={handleInputChange}
-                    disabled={formData.status !== "completed"}
+                    disabled={!canWrite || formData.status !== "completed"}
                   />
                   {formData.status !== "completed" && (
                     <p className="text-xs text-muted-foreground">Ubah status ke "Selesai" untuk mengisi tanggal</p>
@@ -484,32 +524,33 @@ const EditComplaint = () => {
                   onChange={handleInputChange}
                   rows={4}
                   placeholder="Catatan dari admin mengenai proses pengaduan..."
+                  disabled={!canWrite}
                 />
               </div>
 
-              {/* Completion Photo Upload - Only shown when status is completed */}
+              {/* Completion Photo Upload — Only shown when status is completed AND user can write */}
               {formData.status === "completed" && (
                 <div className="space-y-2">
                   <Label>Foto Bukti Penyelesaian</Label>
-                  
+
                   {/* Existing completion photo */}
                   {complaint?.completion_photo_url && !completionPhotoPreview && (
                     <div className="space-y-2">
-                      <img 
-                        src={complaint.completion_photo_url} 
-                        alt="Foto bukti penyelesaian" 
+                      <img
+                        src={complaint.completion_photo_url}
+                        alt="Foto bukti penyelesaian"
                         className="w-full max-w-sm rounded-lg border"
                       />
                       <p className="text-xs text-muted-foreground">Foto bukti penyelesaian saat ini</p>
                     </div>
                   )}
 
-                  {/* New photo preview */}
-                  {completionPhotoPreview && (
+                  {/* New photo preview — only for write-capable roles */}
+                  {canWrite && completionPhotoPreview && (
                     <div className="relative w-full max-w-sm">
-                      <img 
-                        src={completionPhotoPreview} 
-                        alt="Preview foto bukti penyelesaian" 
+                      <img
+                        src={completionPhotoPreview}
+                        alt="Preview foto bukti penyelesaian"
                         className="w-full rounded-lg border"
                       />
                       <Button
@@ -524,15 +565,15 @@ const EditComplaint = () => {
                     </div>
                   )}
 
-                  {/* Upload button */}
-                  {!completionPhotoPreview && (
-                    <div 
+                  {/* Upload button — only for write-capable roles */}
+                  {canWrite && !completionPhotoPreview && (
+                    <div
                       className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
                       onClick={() => completionPhotoRef.current?.click()}
                     >
                       <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        {complaint?.completion_photo_url 
+                        {complaint?.completion_photo_url
                           ? "Klik untuk mengganti foto bukti penyelesaian"
                           : "Klik untuk upload foto bukti penyelesaian"}
                       </p>
@@ -550,12 +591,14 @@ const EditComplaint = () => {
                 </div>
               )}
 
-              {/* Buttons */}
+              {/* Buttons — Save button hidden for viewer role */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button type="submit" className="gap-2 w-full sm:w-auto" disabled={isSaving || isUploadingPhoto}>
-                  {isSaving || isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  {isUploadingPhoto ? "Mengupload foto..." : isSaving ? "Menyimpan..." : "Simpan"}
-                </Button>
+                {canWrite && (
+                  <Button type="submit" className="gap-2 w-full sm:w-auto" disabled={isSaving || isUploadingPhoto}>
+                    {isSaving || isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {isUploadingPhoto ? "Mengupload foto..." : isSaving ? "Menyimpan..." : "Simpan"}
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="outline"

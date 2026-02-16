@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-  import { Loader2, Upload, X, CheckCircle, Search } from "lucide-react";
+import { Loader2, Upload, X, CheckCircle, Search, ShieldCheck } from "lucide-react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,14 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
   'image/webp': 'webp',
 };
 
+// =====================================================
+// ZOD SCHEMA — Hardened Input Validation
+// =====================================================
+// Security Note: The description regex allows common Indonesian writing
+// characters (quotes, colons, slashes) while blocking XSS vectors
+// like <script>, HTML tags, and JavaScript event handlers.
+const SAFE_TEXT_REGEX = /^[a-zA-Z0-9\s.,!?()':"\\/\-]+$/;
+
 const formSchema = z.object({
   reporter_name: z
     .string()
@@ -50,11 +59,16 @@ const formSchema = z.object({
     .trim()
     .min(1, "Nama barang wajib diisi")
     .max(200, "Nama barang maksimal 200 karakter"),
+  // Hardened description field — prevents XSS/Script Injection
   description: z
     .string()
     .trim()
-    .min(1, "Deskripsi kerusakan wajib diisi")
-    .max(2000, "Deskripsi maksimal 2000 karakter"),
+    .min(5, "Deskripsi minimal 5 karakter")
+    .max(500, "Deskripsi maksimal 500 karakter")
+    .regex(
+      SAFE_TEXT_REGEX,
+      "Deskripsi mengandung karakter yang tidak diperbolehkan. Gunakan huruf, angka, dan tanda baca umum saja."
+    ),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -75,6 +89,9 @@ export interface SubmissionResult {
   submittedAt: string;
 }
 
+// Cloudflare Turnstile site key from environment
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_CLOUDFLARE_SITE_KEY || "";
+
 export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: ComplaintFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -82,6 +99,13 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [departmentSearch, setDepartmentSearch] = useState("");
   const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
+
+  // =====================================================
+  // CAPTCHA STATE — Cloudflare Turnstile Integration
+  // Prevents automated/bot form submissions
+  // =====================================================
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
@@ -162,12 +186,28 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
     setSubmissionResult(null);
     setDepartmentSearch("");
     setIsDepartmentOpen(false);
+    setCaptchaToken(null);
+    // Reset the Turnstile widget for next submission
+    turnstileRef.current?.reset();
   };
 
   const onSubmit = async (data: FormData) => {
+    // =====================================================
+    // CAPTCHA GUARD — Block submission without valid token
+    // Prevents bot/automated form submissions
+    // =====================================================
+    if (!captchaToken) {
+      toast({
+        title: "Verifikasi diperlukan",
+        description: "Silakan selesaikan verifikasi CAPTCHA terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Generate ticket number
+      // Generate ticket number (now uses atomic SEQUENCE — prevents race condition)
       const { data: ticketData, error: ticketError } = await supabase.rpc(
         "generate_ticket_number"
       );
@@ -190,7 +230,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
         // Replace slashes in ticket number to avoid path issues in storage
         const safeTicketNumber = ticketData.replace(/\//g, '-');
         const fileName = `${safeTicketNumber}-${Date.now()}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from("complaint-photos")
           .upload(fileName, photoFile);
@@ -232,6 +272,9 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
         description: error.message || "Gagal mengirim pengaduan",
         variant: "destructive",
       });
+      // Reset captcha on failure so user can retry
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
     } finally {
       setIsSubmitting(false);
     }
@@ -254,7 +297,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-green-100 flex items-center justify-center mb-4 animate-fade-in">
               <CheckCircle className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
             </div>
-            
+
             {/* Title */}
             <h2 className="text-lg sm:text-xl font-bold text-foreground mb-1">
               Pengaduan Diterima!
@@ -262,7 +305,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
             <p className="text-sm text-muted-foreground mb-4">
               Pengaduan Anda telah berhasil diajukan
             </p>
-            
+
             {/* Complaint Code */}
             <div className="w-full bg-muted/50 border border-border rounded-xl p-4 mb-3">
               <p className="text-xs text-muted-foreground mb-2">Kode Pengaduan Anda</p>
@@ -272,7 +315,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                 </p>
               </div>
             </div>
-            
+
             {/* Ticket Number (smaller) */}
             <div className="w-full bg-muted/30 border border-border rounded-lg p-3 mb-4">
               <p className="text-xs text-muted-foreground mb-1">Nomor Urut</p>
@@ -287,7 +330,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                 <span className="font-semibold">📌 Penting:</span> Simpan kode pengaduan <strong>{submissionResult.complaintCode}</strong> untuk mengecek status pengaduan Anda kapan saja.
               </p>
             </div>
-            
+
             {/* Close Button */}
             <Button onClick={handleClose} className="w-full h-10 sm:h-11">
               Tutup
@@ -304,7 +347,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Ajukan Pengaduan Barang Rusak</DialogTitle>
         </DialogHeader>
-        
+
         {/* Info about complaint code */}
         <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 sm:p-4 mb-2">
           <p className="text-xs sm:text-sm text-muted-foreground">
@@ -344,7 +387,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                         </span>
                         <Search className="h-4 w-4 opacity-50" />
                       </div>
-                      
+
                       {isDepartmentOpen && (
                         <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg">
                           <div className="p-2 border-b">
@@ -366,9 +409,8 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                                 filteredDepartments.map((dept) => (
                                   <div
                                     key={dept.id}
-                                    className={`relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground ${
-                                      field.value === dept.name ? "bg-accent" : ""
-                                    }`}
+                                    className={`relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground ${field.value === dept.name ? "bg-accent" : ""
+                                      }`}
                                     onClick={() => {
                                       field.onChange(dept.name);
                                       setIsDepartmentOpen(false);
@@ -412,7 +454,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                   <FormLabel>Deskripsi Kerusakan *</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Jelaskan kondisi kerusakan barang secara detail"
+                      placeholder="Jelaskan kondisi kerusakan barang secara detail (min. 5 karakter)"
                       className="resize-none"
                       rows={4}
                       {...field}
@@ -471,6 +513,50 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
               </p>
             </div>
 
+            {/* =====================================================
+                CLOUDFLARE TURNSTILE — Anti-Bot Verification
+                Renders an invisible/managed challenge widget.
+                Form submission is blocked until token is received.
+                ===================================================== */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-sm text-muted-foreground">Verifikasi Keamanan</Label>
+              </div>
+              {TURNSTILE_SITE_KEY ? (
+                <div className="flex justify-center">
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => {
+                      setCaptchaToken(null);
+                      toast({
+                        title: "Verifikasi gagal",
+                        description: "Silakan coba lagi",
+                        variant: "destructive",
+                      });
+                    }}
+                    options={{
+                      theme: "auto",
+                      size: "normal",
+                    }}
+                  />
+                </div>
+              ) : (
+                <p className="text-xs text-destructive text-center py-2">
+                  ⚠️ Turnstile site key tidak dikonfigurasi. Hubungi administrator.
+                </p>
+              )}
+              {captchaToken && (
+                <p className="text-xs text-green-600 text-center flex items-center justify-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  Verifikasi berhasil
+                </p>
+              )}
+            </div>
+
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 sm:pt-4">
               <Button
                 type="button"
@@ -481,7 +567,11 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
               >
                 Batal
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              <Button
+                type="submit"
+                disabled={isSubmitting || !captchaToken}
+                className="w-full sm:w-auto"
+              >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Kirim Pengaduan
               </Button>

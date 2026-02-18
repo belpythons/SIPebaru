@@ -178,7 +178,7 @@ const Dashboard = () => {
                         <TableRow>
                           <TableHead>No. Pengaduan</TableHead>
                           <TableHead>Nama Pemohon</TableHead>
-                          <TableHead>Departemen</TableHead>
+                          <TableHead>Unit Kerja</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Tanggal</TableHead>
                         </TableRow>
@@ -215,11 +215,11 @@ const Dashboard = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-1 text-xs sm:text-sm">
                           <div>
-                            <p className="text-muted-foreground text-xs">Pelapor</p>
+                            <p className="text-muted-foreground text-xs">Pemohon</p>
                             <p className="font-medium truncate text-xs sm:text-sm">{complaint.reporter_name}</p>
                           </div>
                           <div>
-                            <p className="text-muted-foreground text-xs">Departemen</p>
+                            <p className="text-muted-foreground text-xs">Unit Kerja</p>
                             <p className="font-medium truncate text-xs sm:text-sm">{complaint.department}</p>
                           </div>
                         </div>

@@ -74,7 +74,7 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
           <div className="flex items-start gap-2 sm:gap-3">
             <Package className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-sm text-muted-foreground">Nama Barang</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Nama Item</p>
               <p className="font-medium text-sm sm:text-base truncate">{complaint.item_name}</p>
             </div>
           </div>
@@ -82,7 +82,7 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
           <div className="flex items-start gap-2 sm:gap-3">
             <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-sm text-muted-foreground">Departemen</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Unit Kerja</p>
               <p className="font-medium text-sm sm:text-base truncate">{complaint.department}</p>
             </div>
           </div>

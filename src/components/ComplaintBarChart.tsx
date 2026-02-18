@@ -91,7 +91,7 @@ const ComplaintBarChart = () => {
   return (
     <Card className="shadow-card">
       <CardHeader>
-        <CardTitle className="text-base sm:text-lg">Pengaduan per Departemen</CardTitle>
+        <CardTitle className="text-base sm:text-lg">Pengaduan per Unit Kerja</CardTitle>
       </CardHeader>
       <CardContent className="px-2 sm:px-6">
         {isLoading ? (

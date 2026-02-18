@@ -378,10 +378,10 @@ const EditComplaint = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="department">Departemen</Label>
+          <Label htmlFor="department">Unit Kerja</Label>
                 <Select value={formData.department} onValueChange={handleDepartmentChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Pilih departemen" />
+                    <SelectValue placeholder="Pilih unit kerja" />
                   </SelectTrigger>
                   <SelectContent>
                     {departmentsList.map((dept) => (
@@ -396,7 +396,7 @@ const EditComplaint = () => {
               {/* Photo Preview */}
               {complaint.photo_url && (
                 <div className="space-y-2">
-                  <Label>Foto Barang Rusak</Label>
+                  <Label>Foto Item Rusak</Label>
                   <img 
                     src={complaint.photo_url} 
                     alt="Foto barang rusak" 
@@ -407,7 +407,7 @@ const EditComplaint = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="item_name">Nama Barang</Label>
+                  <Label htmlFor="item_name">Nama Item</Label>
                   <Input
                     id="item_name"
                     name="item_name"

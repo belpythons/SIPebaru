@@ -178,21 +178,21 @@ const Departments = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Data Departemen</h1>
+            <h1 className="text-2xl font-bold text-foreground">Data Unit Kerja</h1>
             <p className="text-muted-foreground">
-              Kelola daftar departemen
+              Kelola daftar unit kerja
             </p>
           </div>
           <Button onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Tambah Departemen
+            Tambah Unit Kerja
           </Button>
         </div>
 
         {/* Stats Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Departemen</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Unit Kerja</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -209,7 +209,7 @@ const Departments = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">No</TableHead>
-                    <TableHead>Nama Departemen</TableHead>
+                    <TableHead>Nama Unit Kerja</TableHead>
                     <TableHead>Tanggal Dibuat</TableHead>
                     <TableHead className="w-24 text-center">Aksi</TableHead>
                   </TableRow>
@@ -314,7 +314,7 @@ const Departments = () => {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Tambah Departemen Baru</DialogTitle>
+            <DialogTitle>Tambah Unit Kerja Baru</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Input
@@ -339,7 +339,7 @@ const Departments = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Departemen</DialogTitle>
+            <DialogTitle>Edit Unit Kerja</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Input

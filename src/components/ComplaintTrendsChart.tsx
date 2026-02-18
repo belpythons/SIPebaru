@@ -123,10 +123,10 @@ const ComplaintTrendsChart = () => {
         <CardTitle className="text-base sm:text-lg">Tren Pengaduan (30 Hari)</CardTitle>
         <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
           <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Pilih Departemen" />
+            <SelectValue placeholder="Pilih Unit Kerja" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Semua Departemen</SelectItem>
+            <SelectItem value="all">Semua Unit Kerja</SelectItem>
             {departments.map((dept) => (
               <SelectItem key={dept} value={dept}>
                 {dept}

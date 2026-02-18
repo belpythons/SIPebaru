@@ -36,6 +36,7 @@ interface Complaint {
   status: "pending" | "processing" | "completed";
   reported_at: string;
   processed_at: string | null;
+  completed_at: string | null;
 }
 
 const statusLabels = { pending: "Belum Diproses", processing: "Sedang Diproses", completed: "Selesai" };
@@ -68,7 +69,12 @@ const Complaints = () => {
   useEffect(() => { fetchComplaints(); }, [fetchComplaints]);
   useEffect(() => { setCurrentPage(1); }, [activeTab, searchQuery, filterDate]);
 
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  const formatDate = (dateStr: string) => {
+    // Parse date parts directly from ISO string to avoid timezone shifts
+    const d = dateStr.substring(0, 10).split("-");
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    return `${d[2]} ${months[parseInt(d[1], 10) - 1]} ${d[0]}`;
+  };
 
   const handleDeleteClick = (complaint: Complaint) => { setComplaintToDelete(complaint); setDeleteDialogOpen(true); };
   const handleDeleteConfirm = async () => {
@@ -184,7 +190,7 @@ const Complaints = () => {
                 <TableCell className="font-bold text-primary tracking-wide">{complaint.complaint_code || "-"}</TableCell>
                 <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{complaint.ticket_number}</TableCell>
                 <TableCell>{formatDate(complaint.reported_at)}</TableCell>
-                <TableCell>{complaint.processed_at ? formatDate(complaint.processed_at) : "-"}</TableCell>
+                <TableCell>{complaint.completed_at ? formatDate(complaint.completed_at) : "-"}</TableCell>
                 <TableCell>{complaint.npk || "-"}</TableCell>
                 <TableCell>{complaint.reporter_name}</TableCell>
                 <TableCell>{complaint.department}</TableCell>

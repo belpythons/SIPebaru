@@ -117,10 +117,10 @@ const EditComplaint = () => {
         status: data.status,
         admin_note: data.admin_note || "",
         processed_at: data.processed_at
-          ? new Date(data.processed_at).toISOString().split("T")[0]
+          ? data.processed_at.substring(0, 10)
           : "",
         completed_at: data.completed_at
-          ? new Date(data.completed_at).toISOString().split("T")[0]
+          ? data.completed_at.substring(0, 10)
           : "",
       });
     } catch (error) {
@@ -259,11 +259,11 @@ const EditComplaint = () => {
           completion_photo_url: completionPhotoUrl,
           processed_at:
             formData.status !== "pending" && formData.processed_at
-              ? new Date(formData.processed_at).toISOString()
+              ? formData.processed_at + "T12:00:00.000Z"
               : null,
           completed_at:
             formData.status === "completed" && formData.completed_at
-              ? new Date(formData.completed_at).toISOString()
+              ? formData.completed_at + "T12:00:00.000Z"
               : null,
         })
         .eq("id", id);

@@ -5,7 +5,6 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, FileText, LogIn, Loader2, Package, ClipboardList, CheckCircle2, Clock, Send, Eye, X, Copy, CheckCircle } from "lucide-react";
-import logoSipebaru from "@/assets/logo-sipebaru.png";
 import { ComplaintFormDialog, type SubmissionResult } from "@/components/ComplaintFormDialog";
 import { StatusSearchResult } from "@/components/StatusSearchResult";
 import {
@@ -160,8 +159,8 @@ const Home = () => {
         <div className="text-center space-y-6 sm:space-y-8 w-full">
           {/* Hero Section */}
           <div className="space-y-3 sm:space-y-4">
-            <div className="mb-3 sm:mb-4">
-              <img src={logoSipebaru} alt="Logo SIPebaru" className="h-32 sm:h-44 w-auto mx-auto" />
+            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 mb-3 sm:mb-4">
+              <Package className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent pb-2">
               Selamat Datang di SIPebaru

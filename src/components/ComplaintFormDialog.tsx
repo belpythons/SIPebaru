@@ -211,7 +211,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
         item_name: itemNames,
         quantity: totalQuantity,
         description: data.description.trim(),
-        reported_at: new Date().toISOString(),
+        reported_at: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 12, 0, 0).toISOString(),
         status: "pending",
         photo_url: photoUrl,
       });

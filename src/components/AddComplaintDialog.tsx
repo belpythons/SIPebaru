@@ -263,7 +263,7 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} captionLayout="dropdown-buttons" fromYear={2020} toYear={new Date().getFullYear()} />
                   </PopoverContent>
                 </Popover>
                 <FormMessage />

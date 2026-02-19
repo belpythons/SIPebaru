@@ -161,7 +161,7 @@ const Home = () => {
           {/* Hero Section */}
           <div className="space-y-3 sm:space-y-4">
             <div className="mb-3 sm:mb-4">
-              <img src={logoSipebaru} alt="Logo SIPebaru" className="h-20 sm:h-28 w-auto mx-auto" />
+              <img src={logoSipebaru} alt="Logo SIPebaru" className="h-32 sm:h-44 w-auto mx-auto" />
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent pb-2">
               Selamat Datang di SIPebaru

@@ -245,9 +245,10 @@ export type Database = {
         }[]
       }
       generate_complaint_code: { Args: never; Returns: string }
-      generate_ticket_number:
-        | { Args: never; Returns: string }
-        | { Args: { _report_date?: string }; Returns: string }
+      generate_ticket_number: {
+        Args: { _report_date?: string }
+        Returns: string
+      }
       get_complaint_status: {
         Args: { ticket_num: string }
         Returns: {

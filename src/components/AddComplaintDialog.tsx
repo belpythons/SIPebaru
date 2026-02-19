@@ -133,7 +133,7 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
         npk: data.npk.trim(), reporter_name: data.reporter_name.trim(),
         department: data.department.trim(), item_name: itemNames,
         quantity: totalQuantity, description: data.description?.trim() || null,
-        reported_at: data.reported_at.toISOString(), status: data.status,
+        reported_at: `${data.reported_at.getFullYear()}-${String(data.reported_at.getMonth() + 1).padStart(2, '0')}-${String(data.reported_at.getDate()).padStart(2, '0')}T12:00:00.000Z`, status: data.status,
         processed_at: data.status === "completed" ? new Date().toISOString() : null,
         photo_url: photoUrl,
       });

@@ -108,7 +108,8 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      const { data: ticketData, error: ticketError } = await supabase.rpc("generate_ticket_number");
+      const reportDateStr = `${data.reported_at.getFullYear()}-${String(data.reported_at.getMonth() + 1).padStart(2, '0')}-${String(data.reported_at.getDate()).padStart(2, '0')}`;
+      const { data: ticketData, error: ticketError } = await supabase.rpc("generate_ticket_number" as any, { _report_date: reportDateStr });
       if (ticketError) throw ticketError;
 
       const { data: codeData, error: codeError } = await supabase.rpc("generate_complaint_code" as any);

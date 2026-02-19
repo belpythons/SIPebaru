@@ -175,8 +175,10 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      // Generate ticket number
-      const { data: ticketData, error: ticketError } = await supabase.rpc("generate_ticket_number");
+      // Generate ticket number based on reported date (today)
+      const today = new Date();
+      const reportDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const { data: ticketData, error: ticketError } = await supabase.rpc("generate_ticket_number" as any, { _report_date: reportDateStr });
       if (ticketError) throw ticketError;
 
       // Generate complaint code

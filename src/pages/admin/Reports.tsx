@@ -29,6 +29,7 @@ interface Complaint {
   status: "pending" | "processing" | "completed";
   reported_at: string;
   processed_at: string | null;
+  completed_at: string | null;
 }
 
 const statusLabels = { pending: "Belum Diproses", processing: "Sedang Diproses", completed: "Selesai" };
@@ -101,7 +102,7 @@ const Reports = () => {
     
     const rows = filteredComplaints.map((c, index) => [
       index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
-      c.processed_at ? formatDate(c.processed_at) : "-", c.npk || "-",
+      c.completed_at ? formatDate(c.completed_at) : "-", c.npk || "-",
       c.reporter_name, c.department, c.item_name, c.quantity, c.description || "-", statusLabels[c.status],
     ]);
 
@@ -153,7 +154,7 @@ const Reports = () => {
     // Table
     const tableData = filteredComplaints.map((c, index) => [
       index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
-      c.processed_at ? formatDate(c.processed_at) : "-", c.npk || "-",
+      c.completed_at ? formatDate(c.completed_at) : "-", c.npk || "-",
       c.reporter_name, c.department, c.item_name, c.quantity, statusLabels[c.status],
     ]);
 
@@ -282,7 +283,7 @@ const Reports = () => {
                       <TableCell className="font-mono text-sm">{complaint.complaint_code}</TableCell>
                       <TableCell className="font-medium">{complaint.ticket_number}</TableCell>
                       <TableCell>{formatDate(complaint.reported_at)}</TableCell>
-                      <TableCell>{complaint.processed_at ? formatDate(complaint.processed_at) : "-"}</TableCell>
+                      <TableCell>{complaint.completed_at ? formatDate(complaint.completed_at) : "-"}</TableCell>
                       <TableCell>{complaint.npk || "-"}</TableCell>
                       <TableCell>{complaint.reporter_name}</TableCell>
                       <TableCell>{complaint.department}</TableCell>
@@ -313,7 +314,7 @@ const Reports = () => {
                     <div><p className="text-muted-foreground">Item</p><p className="font-medium truncate">{complaint.item_name}</p></div>
                     <div><p className="text-muted-foreground">Jumlah</p><p className="font-medium">{complaint.quantity}</p></div>
                     <div><p className="text-muted-foreground">Tgl Lapor</p><p className="font-medium">{formatDate(complaint.reported_at)}</p></div>
-                    <div><p className="text-muted-foreground">Tgl Selesai</p><p className="font-medium">{complaint.processed_at ? formatDate(complaint.processed_at) : "-"}</p></div>
+                    <div><p className="text-muted-foreground">Tgl Selesai</p><p className="font-medium">{complaint.completed_at ? formatDate(complaint.completed_at) : "-"}</p></div>
                   </div>
                 </div>
               ))}

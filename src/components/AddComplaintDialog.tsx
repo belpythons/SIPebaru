@@ -251,21 +251,20 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
             )} />
 
             <FormField control={form.control} name="reported_at" render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem>
                 <FormLabel>Tanggal Lapor</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                        {field.value ? format(field.value, "dd MMMM yyyy", { locale: id }) : <span>Pilih tanggal</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} captionLayout="dropdown-buttons" fromYear={2020} toYear={new Date().getFullYear()} />
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <Input
+                    type="date"
+                    value={field.value ? `${field.value.getFullYear()}-${String(field.value.getMonth() + 1).padStart(2, '0')}-${String(field.value.getDate()).padStart(2, '0')}` : ""}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const [y, m, d] = e.target.value.split('-').map(Number);
+                        field.onChange(new Date(y, m - 1, d));
+                      }
+                    }}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />

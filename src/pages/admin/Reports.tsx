@@ -134,10 +134,10 @@ const Reports = () => {
   };
 
   const downloadPDF = () => {
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
-    const margin = 15;
+    const margin = 30;
     const contentWidth = pageWidth - margin * 2;
 
     // Title
@@ -167,21 +167,12 @@ const Reports = () => {
       tableWidth: contentWidth,
       head: [["No", "Kode", "Nomor Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Status"]],
       body: tableData,
-      styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: [0, 0, 0], lineWidth: 0.1, overflow: "linebreak", valign: "middle", halign: "center" },
-      headStyles: { fillColor: [41, 65, 148], textColor: 255, fontStyle: "bold", halign: "center", valign: "middle", lineColor: [0, 0, 0], lineWidth: 0.2, fontSize: 6.5, cellPadding: 2, minCellHeight: 8 },
-      bodyStyles: { lineColor: [0, 0, 0], lineWidth: 0.1, minCellHeight: 7 },
+      styles: { fontSize: 8, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.1, overflow: "linebreak", valign: "middle", halign: "center" },
+      headStyles: { fillColor: [41, 65, 148], textColor: 255, fontStyle: "bold", halign: "center", valign: "middle", lineColor: [0, 0, 0], lineWidth: 0.2, fontSize: 8, cellPadding: 2.5, minCellHeight: 10 },
+      bodyStyles: { lineColor: [0, 0, 0], lineWidth: 0.1, minCellHeight: 8 },
       columnStyles: {
-        0: { cellWidth: 7 },
-        1: { cellWidth: 12 },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 18 },
-        4: { cellWidth: 18 },
-        5: { cellWidth: 12 },
-        6: { cellWidth: 22 },
-        7: { cellWidth: 24 },
-        8: { cellWidth: 22 },
-        9: { cellWidth: 10 },
-        10: { cellWidth: 17 },
+        0: { cellWidth: 10 },
+        9: { cellWidth: 14 },
       },
       alternateRowStyles: { fillColor: [245, 245, 245] },
     });

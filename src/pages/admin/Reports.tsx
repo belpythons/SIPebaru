@@ -158,25 +158,52 @@ const Reports = () => {
       c.reporter_name, c.department, c.item_name, c.quantity, statusLabels[c.status],
     ]);
 
+    const tableWidth = pageWidth - 30; // 15mm margin each side
+
     autoTable(doc, {
       startY: 32,
-      head: [["No", "Kode", "No. Pengaduan", "Tgl Lapor", "Tgl Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jml", "Status"]],
+      margin: { left: 15, right: 15 },
+      tableWidth: tableWidth,
+      head: [["No", "Kode", "Nomor Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Status"]],
       body: tableData,
-      styles: { fontSize: 7, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.1 },
-      headStyles: { fillColor: [41, 65, 148], textColor: 255, fontStyle: "bold", halign: "center", lineColor: [0, 0, 0], lineWidth: 0.2 },
-      bodyStyles: { lineColor: [0, 0, 0], lineWidth: 0.1 },
+      styles: {
+        fontSize: 6.5,
+        cellPadding: { top: 2.5, right: 2, bottom: 2.5, left: 2 },
+        lineColor: [0, 0, 0],
+        lineWidth: 0.1,
+        valign: "middle",
+        halign: "center",
+        overflow: "linebreak",
+        cellWidth: "wrap",
+      },
+      headStyles: {
+        fillColor: [41, 65, 148],
+        textColor: 255,
+        fontStyle: "bold",
+        halign: "center",
+        valign: "middle",
+        lineColor: [0, 0, 0],
+        lineWidth: 0.2,
+        minCellHeight: 10,
+        overflow: "visible",
+      },
+      bodyStyles: {
+        lineColor: [0, 0, 0],
+        lineWidth: 0.1,
+        minCellHeight: 8,
+      },
       columnStyles: {
-        0: { halign: "center", cellWidth: 8 },
-        1: { halign: "center", cellWidth: 14 },
-        2: { cellWidth: 30 },
-        3: { halign: "center", cellWidth: 18 },
-        4: { halign: "center", cellWidth: 18 },
-        5: { cellWidth: 16 },
-        6: { cellWidth: 30 },
-        7: { cellWidth: 28 },
-        8: { cellWidth: 35 },
-        9: { halign: "center", cellWidth: 10 },
-        10: { halign: "center", cellWidth: 22 },
+        0: { halign: "center", cellWidth: tableWidth * 0.05 },   // No 5%
+        1: { halign: "center", cellWidth: tableWidth * 0.08 },   // Kode 8%
+        2: { halign: "center", cellWidth: tableWidth * 0.14 },   // Nomor Pengaduan 14%
+        3: { halign: "center", cellWidth: tableWidth * 0.09 },   // Tanggal Lapor 9%
+        4: { halign: "center", cellWidth: tableWidth * 0.09 },   // Tanggal Selesai 9%
+        5: { halign: "center", cellWidth: tableWidth * 0.07 },   // NPK 7%
+        6: { halign: "left", cellWidth: tableWidth * 0.13 },     // Nama Pemohon 13%
+        7: { halign: "left", cellWidth: tableWidth * 0.12 },     // Unit Kerja 12%
+        8: { halign: "left", cellWidth: tableWidth * 0.13 },     // Nama Item 13%
+        9: { halign: "center", cellWidth: tableWidth * 0.05 },   // Jumlah 5%
+        10: { halign: "center", cellWidth: tableWidth * 0.05 },  // Status 5%
       },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       didDrawPage: () => {},

@@ -98,7 +98,7 @@ const Reports = () => {
     const period = `Periode: ${formatDateFull(dateRange.from)} - ${formatDateFull(dateRange.to)}`;
     const printDate = `Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`;
 
-    const headers = ["No.", "Kode", "No. Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Keterangan", "Status"];
+    const headers = ["No", "Kode", "Nomor Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Keterangan", "Status"];
     
     const rows = filteredComplaints.map((c, index) => [
       index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
@@ -165,23 +165,23 @@ const Reports = () => {
       startY: 45,
       margin: { left: margin, right: margin },
       tableWidth: contentWidth,
-      head: [["No.", "Kode", "No. Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Status"]],
+      head: [["No", "Kode", "Nomor Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Status"]],
       body: tableData,
-      styles: { fontSize: 7.5, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.1, overflow: "linebreak" },
-      headStyles: { fillColor: [41, 65, 148], textColor: 255, fontStyle: "bold", halign: "center", lineColor: [0, 0, 0], lineWidth: 0.2, fontSize: 7.5, cellPadding: 2.5 },
-      bodyStyles: { lineColor: [0, 0, 0], lineWidth: 0.1 },
+      styles: { fontSize: 6.5, cellPadding: 1.5, lineColor: [0, 0, 0], lineWidth: 0.1, overflow: "linebreak", valign: "middle", halign: "center" },
+      headStyles: { fillColor: [41, 65, 148], textColor: 255, fontStyle: "bold", halign: "center", valign: "middle", lineColor: [0, 0, 0], lineWidth: 0.2, fontSize: 6.5, cellPadding: 2, minCellHeight: 8 },
+      bodyStyles: { lineColor: [0, 0, 0], lineWidth: 0.1, minCellHeight: 7 },
       columnStyles: {
-        0: { halign: "center", cellWidth: 8 },
-        1: { halign: "left", cellWidth: 14 },
-        2: { halign: "left", cellWidth: 22 },
-        3: { halign: "center", cellWidth: 20 },
-        4: { halign: "center", cellWidth: 20 },
-        5: { halign: "center", cellWidth: 14 },
-        6: { halign: "left", cellWidth: 22 },
-        7: { halign: "left", cellWidth: 20 },
-        8: { halign: "left", cellWidth: 22 },
-        9: { halign: "center", cellWidth: 10 },
-        10: { halign: "center", cellWidth: 18 },
+        0: { cellWidth: 7 },
+        1: { cellWidth: 12 },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 18 },
+        4: { cellWidth: 18 },
+        5: { cellWidth: 12 },
+        6: { cellWidth: 22 },
+        7: { cellWidth: 24 },
+        8: { cellWidth: 22 },
+        9: { cellWidth: 10 },
+        10: { cellWidth: 17 },
       },
       alternateRowStyles: { fillColor: [245, 245, 245] },
     });

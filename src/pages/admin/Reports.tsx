@@ -134,25 +134,22 @@ const Reports = () => {
   };
 
   const downloadPDF = () => {
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    const margin = 15;
-    const contentWidth = pageWidth - margin * 2;
 
     // Title
-    doc.setFontSize(18);
+    doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text("LAPORAN PENGADUAN ITEM", pageWidth / 2, 25, { align: "center" });
+    doc.text("LAPORAN PENGADUAN ITEM", pageWidth / 2, 15, { align: "center" });
 
     // Period
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Periode: ${formatDateFull(dateRange.from)} - ${formatDateFull(dateRange.to)}`, pageWidth / 2, 33, { align: "center" });
+    doc.text(`Periode: ${formatDateFull(dateRange.from)} - ${formatDateFull(dateRange.to)}`, pageWidth / 2, 22, { align: "center" });
 
     // Print date
-    doc.setFontSize(9);
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleString("id-ID")}`, pageWidth / 2, 39, { align: "center" });
+    doc.setFontSize(8);
+    doc.text(`Tanggal Cetak: ${new Date().toLocaleString("id-ID")}`, pageWidth / 2, 27, { align: "center" });
 
     // Table
     const tableData = filteredComplaints.map((c, index) => [
@@ -162,44 +159,56 @@ const Reports = () => {
     ]);
 
     autoTable(doc, {
-      startY: 45,
-      margin: { left: margin, right: margin },
-      tableWidth: contentWidth,
+      startY: 32,
       head: [["No", "Kode", "No. Pengaduan", "Tgl Lapor", "Tgl Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jml", "Status"]],
       body: tableData,
-      styles: { fontSize: 8, cellPadding: 2.5, lineColor: [0, 0, 0], lineWidth: 0.1, overflow: "linebreak" },
-      headStyles: { fillColor: [41, 65, 148], textColor: 255, fontStyle: "bold", halign: "center", lineColor: [0, 0, 0], lineWidth: 0.2, fontSize: 8.5 },
+      styles: { fontSize: 7, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.1 },
+      headStyles: { fillColor: [41, 65, 148], textColor: 255, fontStyle: "bold", halign: "center", lineColor: [0, 0, 0], lineWidth: 0.2 },
       bodyStyles: { lineColor: [0, 0, 0], lineWidth: 0.1 },
       columnStyles: {
-        0: { halign: "center", cellWidth: 10 },
-        9: { halign: "center", cellWidth: 12 },
-        10: { halign: "center", cellWidth: 20 },
+        0: { halign: "center", cellWidth: 8 },
+        1: { halign: "center", cellWidth: 14 },
+        2: { cellWidth: 30 },
+        3: { halign: "center", cellWidth: 18 },
+        4: { halign: "center", cellWidth: 18 },
+        5: { cellWidth: 16 },
+        6: { cellWidth: 30 },
+        7: { cellWidth: 28 },
+        8: { cellWidth: 35 },
+        9: { halign: "center", cellWidth: 10 },
+        10: { halign: "center", cellWidth: 22 },
       },
       alternateRowStyles: { fillColor: [245, 245, 245] },
+      didDrawPage: () => {},
     });
 
     // Summary section after table
     const finalY = (doc as any).lastAutoTable?.finalY || 200;
-    const summaryY = finalY + 12;
+    const summaryY = finalY + 10;
 
-    const drawSummary = (y: number) => {
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("REKAP TOTAL", margin, y);
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Total Pengaduan   : ${filteredComplaints.length}`, margin, y + 8);
-      doc.text(`Belum Diproses    : ${stats.pending}`, margin, y + 15);
-      doc.text(`Sedang Diproses   : ${stats.processing}`, margin, y + 22);
-      doc.text(`Selesai           : ${stats.completed}`, margin, y + 29);
-    };
-
-    if (summaryY + 35 > pageHeight - 20) {
+    if (summaryY + 30 > doc.internal.pageSize.height - 20) {
       doc.addPage();
-      drawSummary(25);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("REKAP TOTAL", 14, 20);
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Total Pengaduan: ${filteredComplaints.length}`, 14, 28);
+      doc.text(`Belum Diproses: ${stats.pending}`, 14, 34);
+      doc.text(`Sedang Diproses: ${stats.processing}`, 14, 40);
+      doc.text(`Selesai: ${stats.completed}`, 14, 46);
     } else {
-      drawSummary(summaryY);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("REKAP TOTAL", 14, summaryY);
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Total Pengaduan: ${filteredComplaints.length}`, 14, summaryY + 7);
+      doc.text(`Belum Diproses: ${stats.pending}`, 14, summaryY + 13);
+      doc.text(`Sedang Diproses: ${stats.processing}`, 14, summaryY + 19);
+      doc.text(`Selesai: ${stats.completed}`, 14, summaryY + 25);
     }
 
     // Footer on all pages
@@ -208,7 +217,7 @@ const Reports = () => {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
-      doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")} | Halaman ${i} dari ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: "center" });
+      doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")} | Halaman ${i} dari ${pageCount}`, pageWidth / 2, doc.internal.pageSize.height - 10, { align: "center" });
     }
 
     doc.save(`laporan-pengaduan-${dateRange.from}-${dateRange.to}.pdf`);

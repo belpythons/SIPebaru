@@ -34,16 +34,16 @@ import {
 } from "@/components/ui/select";
 
 const itemSchema = z.object({
-  item_name: z.string().trim().min(1, "Nama item wajib diisi").max(200, "Nama item maksimal 200 karakter"),
+  item_name: z.string().trim().min(5, "Nama item minimal 5 karakter").max(200, "Nama item maksimal 200 karakter"),
   quantity: z.number().min(1, "Jumlah minimal 1").max(100000, "Jumlah maksimal 100000"),
 });
 
 const formSchema = z.object({
-  npk: z.string().trim().min(1, "NPK wajib diisi").max(50, "NPK maksimal 50 karakter"),
-  reporter_name: z.string().trim().min(1, "Nama pemohon wajib diisi").max(120, "Nama pemohon maksimal 120 karakter"),
-  department: z.string().trim().min(1, "Unit kerja wajib diisi").max(120, "Unit kerja maksimal 120 karakter"),
+  npk: z.string().trim().min(3, "NPK minimal 3 karakter").max(50, "NPK maksimal 50 karakter"),
+  reporter_name: z.string().trim().min(3, "Nama pemohon minimal 3 karakter").max(120, "Nama pemohon maksimal 120 karakter"),
+  department: z.string().trim().min(1, "Unit kerja wajib dipilih").max(120, "Unit kerja maksimal 120 karakter"),
   items: z.array(itemSchema).min(1, "Minimal 1 item").max(3, "Maksimal 3 item"),
-  description: z.string().max(2000, "Keterangan maksimal 2000 karakter").optional(),
+  description: z.string().trim().min(10, "Keterangan minimal 10 karakter").max(2000, "Keterangan maksimal 2000 karakter").optional(),
   reported_at: z.date({ required_error: "Tanggal lapor wajib diisi" }),
   status: z.enum(["pending", "processing", "completed"]),
 });
@@ -164,7 +164,7 @@ const AddComplaintDialog = ({ onSuccess }: AddComplaintDialogProps) => {
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Tambah Pengaduan Baru</DialogTitle></DialogHeader>
-        
+
         <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mb-2">
           <p className="text-xs sm:text-sm text-muted-foreground">Kode pengaduan unik (5 karakter) akan dibuat secara otomatis saat pengaduan disimpan.</p>
         </div>

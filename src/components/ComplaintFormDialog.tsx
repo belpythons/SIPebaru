@@ -38,7 +38,7 @@ const itemSchema = z.object({
   item_name: z
     .string()
     .trim()
-    .min(1, "Nama item wajib diisi")
+    .min(5, "Nama item minimal 5 karakter")
     .max(200, "Nama item maksimal 200 karakter"),
   quantity: z
     .number()
@@ -50,12 +50,12 @@ const formSchema = z.object({
   npk: z
     .string()
     .trim()
-    .min(1, "NPK wajib diisi")
+    .min(3, "NPK minimal 3 karakter")
     .max(50, "NPK maksimal 50 karakter"),
   reporter_name: z
     .string()
     .trim()
-    .min(1, "Nama pemohon wajib diisi")
+    .min(3, "Nama pemohon minimal 3 karakter")
     .max(120, "Nama pemohon maksimal 120 karakter"),
   department: z
     .string()
@@ -69,7 +69,7 @@ const formSchema = z.object({
   description: z
     .string()
     .trim()
-    .min(1, "Deskripsi kerusakan wajib diisi")
+    .min(10, "Deskripsi kerusakan minimal 10 karakter")
     .max(2000, "Deskripsi maksimal 2000 karakter"),
 });
 
@@ -191,7 +191,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
         const fileExt = ALLOWED_IMAGE_TYPES[photoFile.type] || 'jpg';
         const safeTicketNumber = ticketData.replace(/\//g, '-');
         const fileName = `${safeTicketNumber}-${Date.now()}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from("complaint-photos")
           .upload(fileName, photoFile);
@@ -260,7 +260,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
             </div>
             <h2 className="text-lg sm:text-xl font-bold text-foreground mb-1">Pengaduan Diterima!</h2>
             <p className="text-sm text-muted-foreground mb-4">Pengaduan Anda telah berhasil diajukan</p>
-            
+
             <div className="w-full bg-muted/50 border border-border rounded-xl p-4 mb-3">
               <p className="text-xs text-muted-foreground mb-2">Kode Pengaduan Anda</p>
               <div className="bg-background border-2 border-primary/30 px-4 py-3 rounded-lg">
@@ -269,7 +269,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                 </p>
               </div>
             </div>
-            
+
             <div className="w-full bg-muted/30 border border-border rounded-lg p-3 mb-4">
               <p className="text-xs text-muted-foreground mb-1">Nomor Urut</p>
               <p className="text-sm font-medium text-foreground break-all">{submissionResult.ticketNumber}</p>
@@ -280,7 +280,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                 <span className="font-semibold">📌 Penting:</span> Simpan kode pengaduan <strong>{submissionResult.complaintCode}</strong> untuk mengecek status pengaduan Anda kapan saja.
               </p>
             </div>
-            
+
             <Button onClick={handleClose} className="w-full h-10 sm:h-11">Tutup</Button>
           </div>
         </DialogContent>
@@ -294,7 +294,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Ajukan Pengaduan Item Rusak</DialogTitle>
         </DialogHeader>
-        
+
         <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 sm:p-4 mb-2">
           <p className="text-xs sm:text-sm text-muted-foreground">
             Setelah pengaduan dikirim, Anda akan menerima <strong className="text-primary">Kode Pengaduan</strong> unik (5 karakter) yang dapat digunakan untuk melacak status pengaduan Anda.
@@ -347,7 +347,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                         </span>
                         <Search className="h-4 w-4 opacity-50" />
                       </div>
-                      
+
                       {isDepartmentOpen && (
                         <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg">
                           <div className="p-2 border-b">
@@ -369,9 +369,8 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                                 filteredDepartments.map((dept) => (
                                   <div
                                     key={dept.id}
-                                    className={`relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground ${
-                                      field.value === dept.name ? "bg-accent" : ""
-                                    }`}
+                                    className={`relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground ${field.value === dept.name ? "bg-accent" : ""
+                                      }`}
                                     onClick={() => {
                                       field.onChange(dept.name);
                                       setIsDepartmentOpen(false);
@@ -410,7 +409,7 @@ export function ComplaintFormDialog({ open, onOpenChange, onSubmitSuccess }: Com
                   </Button>
                 )}
               </div>
-              
+
               {fields.map((field, index) => (
                 <div key={field.id} className="border rounded-lg p-3 space-y-2 bg-muted/20">
                   <div className="flex items-center justify-between">

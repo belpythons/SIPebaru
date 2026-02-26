@@ -13,21 +13,22 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (session?.user) {
-        // Check if user has admin role
+        // Verifikasi apakah user punya role admin/super_admin/viewer
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
-          .eq("role", "admin")
+          .in("role", ["admin", "super_admin", "viewer"])
+          .limit(1)
           .maybeSingle();
 
         setIsAuthenticated(!!roleData);
       } else {
         setIsAuthenticated(false);
       }
-      
+
       setIsLoading(false);
     };
 
@@ -49,7 +50,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;

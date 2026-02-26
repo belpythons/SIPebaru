@@ -9,9 +9,9 @@ import {
   LogOut,
   Menu,
   X,
-  Package,
+  Upload,
+  ScrollText,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -19,12 +19,24 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
-  { icon: FileText, label: "Data Pengaduan", path: "/admin/complaints" },
-  { icon: Building2, label: "Unit Kerja", path: "/admin/departments" },
-  { icon: BarChart3, label: "Laporan", path: "/admin/reports" },
-  { icon: Users, label: "Pengaturan Akun", path: "/admin/accounts" },
+export type UserRole = "super_admin" | "admin" | "viewer" | null;
+
+// Definisi menu item dengan akses per role
+interface MenuItem {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  path: string;
+  roles: UserRole[];
+}
+
+const allMenuItems: MenuItem[] = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/admin", roles: ["super_admin", "admin", "viewer"] },
+  { icon: FileText, label: "Data Pengaduan", path: "/admin/complaints", roles: ["super_admin", "admin"] },
+  { icon: Building2, label: "Unit Kerja", path: "/admin/departments", roles: ["super_admin", "admin"] },
+  { icon: BarChart3, label: "Laporan", path: "/admin/reports", roles: ["super_admin", "admin", "viewer"] },
+  { icon: Users, label: "Manajemen Akun", path: "/admin/accounts", roles: ["super_admin", "admin"] },
+  { icon: Upload, label: "Import Data", path: "/admin/import", roles: ["super_admin"] },
+  { icon: ScrollText, label: "Log Aktivitas", path: "/admin/activity-logs", roles: ["super_admin"] },
 ];
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
@@ -32,34 +44,61 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthAndRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/login");
         return;
       }
 
-      const { data: roleData } = await supabase
+      // Ambil role user saat ini (prioritas: super_admin > admin > viewer)
+      const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", session.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+        .in("role", ["admin", "super_admin", "viewer"]);
 
-      if (!roleData) {
+      if (!roles || roles.length === 0) {
+        await supabase.auth.signOut();
+        navigate("/login");
+        return;
+      }
+
+      // Tentukan role tertinggi
+      const roleValues = roles.map((r) => r.role);
+      if (roleValues.includes("super_admin")) {
+        setUserRole("super_admin");
+      } else if (roleValues.includes("admin")) {
+        setUserRole("admin");
+      } else if (roleValues.includes("viewer")) {
+        setUserRole("viewer");
+      } else {
         await supabase.auth.signOut();
         navigate("/login");
       }
     };
 
-    checkAuth();
+    checkAuthAndRole();
   }, [navigate]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/");
+    navigate("/login");
+  };
+
+  // Filter menu berdasarkan role
+  const visibleMenuItems = allMenuItems.filter(
+    (item) => userRole && item.roles.includes(userRole)
+  );
+
+  // Label role untuk ditampilkan
+  const roleLabelMap: Record<string, string> = {
+    super_admin: "Super Admin",
+    admin: "Admin",
+    viewer: "Viewer",
   };
 
   return (
@@ -68,7 +107,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       <div className="fixed inset-0 bg-gradient-to-br from-primary/10 via-blue-400/5 to-cyan-300/5" />
       <div className="fixed top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/4" />
       <div className="fixed bottom-0 left-0 w-[500px] h-[500px] bg-cyan-400/15 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/4" />
-      
+
       <div className="relative z-10 min-h-screen flex w-full max-w-full">
         {/* Sidebar - Desktop */}
         <aside
@@ -81,21 +120,25 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {/* Logo */}
             <div className="p-4 border-b border-sidebar-border">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-primary-foreground flex-shrink-0">
-                  <Package className="h-5 w-5" />
-                </div>
+                <img
+                  src="/icon.png"
+                  alt="SIPebaru"
+                  className="w-10 h-10 rounded-lg flex-shrink-0 object-contain"
+                />
                 {isSidebarOpen && (
                   <div className="overflow-hidden">
                     <h1 className="text-lg font-bold text-sidebar-foreground">SIPebaru</h1>
-                    <p className="text-xs text-sidebar-foreground/70">Admin Panel</p>
+                    <p className="text-xs text-sidebar-foreground/70">
+                      {userRole ? roleLabelMap[userRole] || "Panel Admin" : "Panel Admin"}
+                    </p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Navigation */}
+            {/* Navigasi */}
             <nav className="flex-1 p-4 space-y-2">
-              {menuItems.map((item) => {
+              {visibleMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <Link
@@ -115,14 +158,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               })}
             </nav>
 
-            {/* Logout */}
+            {/* Keluar */}
             <div className="p-4 border-t border-sidebar-border">
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive transition-all duration-200 w-full"
               >
                 <LogOut className="h-5 w-5 flex-shrink-0" />
-                {isSidebarOpen && <span>Logout</span>}
+                {isSidebarOpen && <span>Keluar</span>}
               </button>
             </div>
 
@@ -139,9 +182,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {/* Mobile Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-sidebar p-4 md:hidden flex items-center justify-between border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
-              <Package className="h-4 w-4" />
-            </div>
+            <img
+              src="/icon.png"
+              alt="SIPebaru"
+              className="w-8 h-8 rounded-lg object-contain"
+            />
             <span className="font-bold text-sidebar-foreground">SIPebaru</span>
           </div>
           <button
@@ -156,7 +201,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-40 bg-sidebar pt-16 md:hidden">
             <nav className="p-4 space-y-2">
-              {menuItems.map((item) => {
+              {visibleMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <Link
@@ -180,13 +225,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive transition-all duration-200 w-full mt-4"
               >
                 <LogOut className="h-5 w-5" />
-                <span className="font-medium">Logout</span>
+                <span className="font-medium">Keluar</span>
               </button>
             </nav>
           </div>
         )}
 
-        {/* Main Content */}
+        {/* Konten Utama */}
         <main
           className={cn(
             "flex-1 transition-all duration-300 pt-16 md:pt-0 min-w-0 w-full",
@@ -196,11 +241,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           {/* Top Bar */}
           <header className="hidden md:flex h-16 bg-card/80 backdrop-blur-sm border-b border-border items-center px-6 sticky top-0 z-30">
             <h2 className="text-lg font-semibold text-foreground">
-              SIPebaru Admin Panel
+              SIPebaru Panel Admin
             </h2>
           </header>
 
-          {/* Page Content */}
+          {/* Konten Halaman */}
           <div className="p-3 sm:p-4 md:p-6 w-full max-w-full overflow-x-hidden">{children}</div>
         </main>
       </div>
@@ -209,3 +254,4 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 };
 
 export default AdminLayout;
+export { allMenuItems };

@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2, Building2, Pencil } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import EmptyState from "@/components/EmptyState";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -59,6 +61,7 @@ const Departments = () => {
       const { data, error } = await supabase
         .from("departments")
         .select("*")
+        .is("deleted_at", null)
         .order("name", { ascending: true });
 
       if (error) throw error;
@@ -116,12 +119,12 @@ const Departments = () => {
     },
   });
 
-  // Delete department mutation
+  // Soft delete mutation (ubah ke deleted_at)
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("departments")
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq("id", id);
 
       if (error) throw error;
@@ -216,15 +219,22 @@ const Departments = () => {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8">
-                        Memuat data...
-                      </TableCell>
-                    </TableRow>
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-6" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+                      </TableRow>
+                    ))
                   ) : departments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                        Belum ada data departemen
+                      <TableCell colSpan={4} className="p-0">
+                        <EmptyState
+                          icon={Building2}
+                          title="Belum ada unit kerja"
+                          description="Tambahkan unit kerja baru untuk memulai"
+                        />
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -267,11 +277,18 @@ const Departments = () => {
             {/* Mobile Card View */}
             <div className="md:hidden p-4 space-y-3">
               {isLoading ? (
-                <p className="text-center py-8">Memuat data...</p>
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="p-4 border rounded-lg space-y-2 bg-card">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))
               ) : departments.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground">
-                  Belum ada data departemen
-                </p>
+                <EmptyState
+                  icon={Building2}
+                  title="Belum ada unit kerja"
+                  description="Tambahkan unit kerja baru untuk memulai"
+                />
               ) : (
                 departments.map((dept, index) => (
                   <div key={dept.id} className="p-4 border rounded-lg space-y-2 bg-card">
@@ -366,7 +383,7 @@ const Departments = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Departemen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus departemen "{departmentToDelete?.name}"? 
+              Apakah Anda yakin ingin menghapus departemen "{departmentToDelete?.name}"?
               Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -48,7 +48,7 @@ function validatePassword(password: string): { valid: boolean; error?: string } 
 // Safe error mapping to prevent information leakage
 function mapErrorToSafeMessage(error: Error | { message?: string }): string {
   const message = error?.message?.toLowerCase() || "";
-  
+
   if (message.includes("duplicate") || message.includes("already exists") || message.includes("already registered")) {
     return "Email address is already in use";
   }
@@ -58,7 +58,7 @@ function mapErrorToSafeMessage(error: Error | { message?: string }): string {
   if (message.includes("password")) {
     return "Password does not meet requirements";
   }
-  
+
   // Return generic message for all other errors
   return "Failed to create admin account";
 }
@@ -108,12 +108,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if the user is an admin
+    // Check if the user is an admin or super_admin
     const { data: roleData, error: roleError } = await userClient
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .eq("role", "admin")
+      .in("role", ["admin", "super_admin"])
+      .limit(1)
       .maybeSingle();
 
     if (roleError || !roleData) {
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse the request body
-    let body: { email?: string; password?: string; username?: string; npk?: string };
+    let body: { email?: string; password?: string; username?: string; npk?: string; role?: string };
     try {
       body = await req.json();
     } catch {
@@ -134,7 +135,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, username, npk } = body;
+    const { email, password, username, npk, role: assignRole } = body;
+    const targetRole = assignRole === "viewer" ? "viewer" : "admin";
 
     // Comprehensive input validation
     const emailValidation = validateEmail(email || "");
@@ -201,12 +203,12 @@ Deno.serve(async (req) => {
       // Don't fail the request, profile can be created later
     }
 
-    // Add admin role
+    // Add user role
     const { error: roleInsertError } = await adminClient
       .from("user_roles")
       .insert({
         user_id: newUserData.user.id,
-        role: "admin",
+        role: targetRole,
       });
 
     if (roleInsertError) {
@@ -215,10 +217,10 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: "Admin account created successfully",
-        user_id: newUserData.user.id 
+        user_id: newUserData.user.id
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

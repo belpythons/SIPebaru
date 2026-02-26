@@ -99,7 +99,7 @@ const Reports = () => {
     const printDate = `Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`;
 
     const headers = ["No", "Kode", "No. Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Keterangan", "Status"];
-    
+
     const rows = filteredComplaints.map((c, index) => [
       index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
       c.completed_at ? formatDate(c.completed_at) : "-", c.npk || "-",
@@ -133,122 +133,139 @@ const Reports = () => {
     toast({ title: "Download berhasil", description: "File Excel (CSV) berhasil diunduh" });
   };
 
-  const downloadPDF = () => {
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    const pageWidth = doc.internal.pageSize.width;
+  const downloadPDF = async () => {
+    try {
+      // Panggil RPC generate_kop_surat_number untuk nomor surat resmi
+      const { data: kopSurat, error: kopError } = await supabase.rpc("generate_kop_surat_number");
+      if (kopError) {
+        toast({ title: "Gagal membuat nomor surat", description: kopError.message || "Terjadi kesalahan saat membuat nomor Kop Surat", variant: "destructive" });
+        return;
+      }
 
-    // Title
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("LAPORAN PENGADUAN ITEM", pageWidth / 2, 15, { align: "center" });
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pageWidth = doc.internal.pageSize.width;
 
-    // Period
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Periode: ${formatDateFull(dateRange.from)} - ${formatDateFull(dateRange.to)}`, pageWidth / 2, 22, { align: "center" });
-
-    // Print date
-    doc.setFontSize(8);
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleString("id-ID")}`, pageWidth / 2, 27, { align: "center" });
-
-    // Table
-    const tableData = filteredComplaints.map((c, index) => [
-      index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
-      c.completed_at ? formatDate(c.completed_at) : "-", c.npk || "-",
-      c.reporter_name, c.department, c.item_name, c.quantity, statusLabels[c.status],
-    ]);
-
-    const tableWidth = pageWidth - 30; // 15mm margin each side
-
-    autoTable(doc, {
-      startY: 32,
-      margin: { left: 15, right: 15 },
-      tableWidth: tableWidth,
-      head: [["No", "Kode", "Nomor Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Status"]],
-      body: tableData,
-      styles: {
-        fontSize: 6.5,
-        cellPadding: { top: 2.5, right: 2, bottom: 2.5, left: 2 },
-        lineColor: [0, 0, 0],
-        lineWidth: 0.1,
-        valign: "middle",
-        halign: "center",
-        overflow: "linebreak",
-        cellWidth: "wrap",
-      },
-      headStyles: {
-        fillColor: [41, 65, 148],
-        textColor: 255,
-        fontStyle: "bold",
-        halign: "center",
-        valign: "middle",
-        lineColor: [0, 0, 0],
-        lineWidth: 0.2,
-        minCellHeight: 10,
-        overflow: "visible",
-      },
-      bodyStyles: {
-        lineColor: [0, 0, 0],
-        lineWidth: 0.1,
-        minCellHeight: 8,
-      },
-      columnStyles: {
-        0: { halign: "center", cellWidth: tableWidth * 0.05 },   // No 5%
-        1: { halign: "center", cellWidth: tableWidth * 0.08 },   // Kode 8%
-        2: { halign: "center", cellWidth: tableWidth * 0.14 },   // Nomor Pengaduan 14%
-        3: { halign: "center", cellWidth: tableWidth * 0.09 },   // Tanggal Lapor 9%
-        4: { halign: "center", cellWidth: tableWidth * 0.09 },   // Tanggal Selesai 9%
-        5: { halign: "center", cellWidth: tableWidth * 0.07 },   // NPK 7%
-        6: { halign: "left", cellWidth: tableWidth * 0.13 },     // Nama Pemohon 13%
-        7: { halign: "left", cellWidth: tableWidth * 0.12 },     // Unit Kerja 12%
-        8: { halign: "left", cellWidth: tableWidth * 0.13 },     // Nama Item 13%
-        9: { halign: "center", cellWidth: tableWidth * 0.05 },   // Jumlah 5%
-        10: { halign: "center", cellWidth: tableWidth * 0.05 },  // Status 5%
-      },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
-      didDrawPage: () => {},
-    });
-
-    // Summary section after table
-    const finalY = (doc as any).lastAutoTable?.finalY || 200;
-    const summaryY = finalY + 10;
-
-    if (summaryY + 30 > doc.internal.pageSize.height - 20) {
-      doc.addPage();
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text("REKAP TOTAL", 14, 20);
-
+      // Kop Surat (Nomor Surat Resmi)
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      doc.text(`Total Pengaduan: ${filteredComplaints.length}`, 14, 28);
-      doc.text(`Belum Diproses: ${stats.pending}`, 14, 34);
-      doc.text(`Sedang Diproses: ${stats.processing}`, 14, 40);
-      doc.text(`Selesai: ${stats.completed}`, 14, 46);
-    } else {
-      doc.setFontSize(10);
+      doc.text(`No: ${kopSurat || "-"}`, pageWidth - 15, 12, { align: "right" });
+
+      // Judul
+      doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
-      doc.text("REKAP TOTAL", 14, summaryY);
+      doc.text("LAPORAN PENGADUAN ITEM", pageWidth / 2, 18, { align: "center" });
 
-      doc.setFontSize(9);
+      // Periode
+      doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text(`Total Pengaduan: ${filteredComplaints.length}`, 14, summaryY + 7);
-      doc.text(`Belum Diproses: ${stats.pending}`, 14, summaryY + 13);
-      doc.text(`Sedang Diproses: ${stats.processing}`, 14, summaryY + 19);
-      doc.text(`Selesai: ${stats.completed}`, 14, summaryY + 25);
-    }
+      doc.text(`Periode: ${formatDateFull(dateRange.from)} - ${formatDateFull(dateRange.to)}`, pageWidth / 2, 25, { align: "center" });
 
-    // Footer on all pages
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
+      // Tanggal Cetak
       doc.setFontSize(8);
-      doc.setFont("helvetica", "italic");
-      doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")} | Halaman ${i} dari ${pageCount}`, pageWidth / 2, doc.internal.pageSize.height - 10, { align: "center" });
-    }
+      doc.text(`Tanggal Cetak: ${new Date().toLocaleString("id-ID")}`, pageWidth / 2, 30, { align: "center" });
 
-    doc.save(`laporan-pengaduan-${dateRange.from}-${dateRange.to}.pdf`);
-    toast({ title: "Download berhasil", description: "File PDF berhasil diunduh" });
+      // Tabel
+      const tableData = filteredComplaints.map((c, index) => [
+        index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
+        c.completed_at ? formatDate(c.completed_at) : "-", c.npk || "-",
+        c.reporter_name, c.department, c.item_name, c.quantity, statusLabels[c.status],
+      ]);
+
+      const tableWidth = pageWidth - 30; // 15mm margin tiap sisi
+
+      autoTable(doc, {
+        startY: 35,
+        margin: { left: 15, right: 15 },
+        tableWidth: tableWidth,
+        head: [["No", "Kode", "Nomor Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Status"]],
+        body: tableData,
+        styles: {
+          fontSize: 6.5,
+          cellPadding: { top: 2.5, right: 2, bottom: 2.5, left: 2 },
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1,
+          valign: "middle",
+          halign: "center",
+          overflow: "linebreak",
+          cellWidth: "wrap",
+        },
+        headStyles: {
+          fillColor: [41, 65, 148],
+          textColor: 255,
+          fontStyle: "bold",
+          halign: "center",
+          valign: "middle",
+          lineColor: [0, 0, 0],
+          lineWidth: 0.2,
+          minCellHeight: 10,
+          overflow: "visible",
+        },
+        bodyStyles: {
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1,
+          minCellHeight: 8,
+        },
+        columnStyles: {
+          0: { halign: "center", cellWidth: tableWidth * 0.05 },   // No 5%
+          1: { halign: "center", cellWidth: tableWidth * 0.08 },   // Kode 8%
+          2: { halign: "center", cellWidth: tableWidth * 0.14 },   // Nomor Pengaduan 14%
+          3: { halign: "center", cellWidth: tableWidth * 0.09 },   // Tanggal Lapor 9%
+          4: { halign: "center", cellWidth: tableWidth * 0.09 },   // Tanggal Selesai 9%
+          5: { halign: "center", cellWidth: tableWidth * 0.07 },   // NPK 7%
+          6: { halign: "left", cellWidth: tableWidth * 0.13 },     // Nama Pemohon 13%
+          7: { halign: "left", cellWidth: tableWidth * 0.12 },     // Unit Kerja 12%
+          8: { halign: "left", cellWidth: tableWidth * 0.13 },     // Nama Item 13%
+          9: { halign: "center", cellWidth: tableWidth * 0.05 },   // Jumlah 5%
+          10: { halign: "center", cellWidth: tableWidth * 0.05 },  // Status 5%
+        },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        didDrawPage: () => { },
+      });
+
+      // Summary section after table
+      const finalY = (doc as any).lastAutoTable?.finalY || 200;
+      const summaryY = finalY + 10;
+
+      if (summaryY + 30 > doc.internal.pageSize.height - 20) {
+        doc.addPage();
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("REKAP TOTAL", 14, 20);
+
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Total Pengaduan: ${filteredComplaints.length}`, 14, 28);
+        doc.text(`Belum Diproses: ${stats.pending}`, 14, 34);
+        doc.text(`Sedang Diproses: ${stats.processing}`, 14, 40);
+        doc.text(`Selesai: ${stats.completed}`, 14, 46);
+      } else {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("REKAP TOTAL", 14, summaryY);
+
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Total Pengaduan: ${filteredComplaints.length}`, 14, summaryY + 7);
+        doc.text(`Belum Diproses: ${stats.pending}`, 14, summaryY + 13);
+        doc.text(`Sedang Diproses: ${stats.processing}`, 14, summaryY + 19);
+        doc.text(`Selesai: ${stats.completed}`, 14, summaryY + 25);
+      }
+
+      // Footer on all pages
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "italic");
+        doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")} | Halaman ${i} dari ${pageCount}`, pageWidth / 2, doc.internal.pageSize.height - 10, { align: "center" });
+      }
+
+      doc.save(`laporan-pengaduan-${dateRange.from}-${dateRange.to}.pdf`);
+      toast({ title: "Download berhasil", description: "File PDF berhasil diunduh" });
+    } catch (error: any) {
+      console.error("Error generating PDF:", error);
+      toast({ title: "Gagal membuat PDF", description: error.message || "Terjadi kesalahan saat membuat file PDF", variant: "destructive" });
+    }
   };
 
   if (isLoading) {

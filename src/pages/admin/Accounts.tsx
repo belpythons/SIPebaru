@@ -76,6 +76,7 @@ const Accounts = () => {
       const { data } = await supabase
         .from("profiles")
         .select("*")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (data) {
@@ -204,7 +205,7 @@ const Accounts = () => {
       } else {
         // Create new admin using edge function
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (!session?.access_token) {
           throw new Error("Sesi tidak valid. Silakan login ulang.");
         }
@@ -261,16 +262,16 @@ const Accounts = () => {
     }
 
     try {
-      // Delete user role first
+      // Hapus role user terlebih dahulu
       await supabase
         .from("user_roles")
         .delete()
         .eq("user_id", selectedProfile.user_id);
 
-      // Then delete profile
+      // Soft delete profile
       const { error } = await supabase
         .from("profiles")
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq("id", selectedProfile.id);
 
       if (error) throw error;
@@ -423,18 +424,18 @@ const Accounts = () => {
             <div className="hidden md:block">
               <Table>
                 <TableHeader>
-                   <TableRow>
-                     <TableHead>Username</TableHead>
-                     <TableHead>NPK</TableHead>
-                     <TableHead>Email</TableHead>
-                     <TableHead>Tanggal Dibuat</TableHead>
-                     <TableHead className="text-center">Aksi</TableHead>
-                   </TableRow>
+                  <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead>NPK</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Tanggal Dibuat</TableHead>
+                    <TableHead className="text-center">Aksi</TableHead>
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
                   {profiles.length === 0 ? (
-                     <TableRow>
-                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         Belum ada akun admin
                       </TableCell>
                     </TableRow>
@@ -501,9 +502,9 @@ const Accounts = () => {
                             <span className="ml-2 text-xs text-muted-foreground">(Anda)</span>
                           )}
                         </p>
-                         <p className="text-sm text-muted-foreground">{profile.npk || 'NPK: -'}</p>
-                         <p className="text-sm text-muted-foreground">{profile.email || '-'}</p>
-                         <p className="text-xs text-muted-foreground">{formatDate(profile.created_at)}</p>
+                        <p className="text-sm text-muted-foreground">{profile.npk || 'NPK: -'}</p>
+                        <p className="text-sm text-muted-foreground">{profile.email || '-'}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(profile.created_at)}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">

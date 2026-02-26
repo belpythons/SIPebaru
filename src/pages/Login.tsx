@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Package, LogIn, ArrowLeft } from "lucide-react";
+import { LogIn, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,17 +34,18 @@ const Login = () => {
 
       if (error) throw error;
 
-      // Check if user has admin role
+      // Verifikasi apakah user punya role admin/super_admin/viewer
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", data.user.id)
-        .eq("role", "admin")
+        .in("role", ["admin", "super_admin", "viewer"])
+        .limit(1)
         .maybeSingle();
 
       if (roleError || !roleData) {
         await supabase.auth.signOut();
-        throw new Error("Anda tidak memiliki akses admin");
+        throw new Error("Anda tidak memiliki akses ke panel ini");
       }
 
       toast({
@@ -71,7 +72,7 @@ const Login = () => {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-400/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/4" />
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-blue-300/15 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
-      
+
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Header */}
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -79,9 +80,11 @@ const Login = () => {
             <div className="flex h-14 sm:h-16 items-center justify-between">
               {/* Logo & Brand */}
               <Link to="/" className="flex items-center gap-2 sm:gap-3">
-                <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary text-primary-foreground">
-                  <Package className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
+                <img
+                  src="/icon.png"
+                  alt="SIPebaru"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-contain"
+                />
                 <div className="flex flex-col">
                   <span className="font-bold text-base sm:text-lg text-foreground leading-tight">SIPebaru</span>
                   <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Sistem Informasi Pengaduan Barang Rusak</span>
@@ -105,14 +108,11 @@ const Login = () => {
           <Card className="w-full max-w-md shadow-lg border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
             <CardHeader className="text-center pb-4 sm:pb-6 px-6 sm:px-8 pt-6 sm:pt-8">
               <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-4 mx-auto">
-                <LogIn className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
+                <img src="/icon.png" alt="SIPebaru" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
               </div>
               <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
-                Admin Login
+                Masuk
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-2">
-                Masuk ke panel administrasi SIPebaru
-              </p>
             </CardHeader>
             <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
@@ -150,7 +150,7 @@ const Login = () => {
                   disabled={isLoading}
                 >
                   <LogIn className="h-4 w-4" />
-                  {isLoading ? "Memproses..." : "Login"}
+                  {isLoading ? "Memproses..." : "Masuk"}
                 </Button>
               </form>
             </CardContent>
@@ -162,12 +162,10 @@ const Login = () => {
           <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-5">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-2">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary text-primary-foreground">
-                  <Package className="h-3 w-3" />
-                </div>
+                <img src="/icon.png" alt="SIPebaru" className="w-6 h-6 rounded-md object-contain" />
                 <span className="font-medium text-foreground text-sm">SIPebaru</span>
               </div>
-              
+
               <span className="hidden sm:inline text-muted-foreground">•</span>
 
               <p className="text-sm text-muted-foreground text-center">

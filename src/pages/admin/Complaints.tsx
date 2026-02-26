@@ -57,7 +57,7 @@ const Complaints = () => {
 
   const fetchComplaints = useCallback(async () => {
     try {
-      const { data } = await supabase.from("complaints").select("*").order("reported_at", { ascending: false });
+      const { data } = await supabase.from("complaints").select("*").is("deleted_at", null).order("reported_at", { ascending: false });
       if (data) setComplaints(data);
     } catch (error) {
       console.error("Error fetching complaints:", error);
@@ -81,7 +81,7 @@ const Complaints = () => {
     if (!complaintToDelete) return;
     setIsDeleting(true);
     try {
-      const { error } = await supabase.from("complaints").delete().eq("id", complaintToDelete.id);
+      const { error } = await supabase.from("complaints").update({ deleted_at: new Date().toISOString() }).eq("id", complaintToDelete.id);
       if (error) throw error;
       toast.success("Pengaduan berhasil dihapus");
       fetchComplaints();

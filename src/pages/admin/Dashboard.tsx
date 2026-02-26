@@ -67,6 +67,7 @@ const Dashboard = () => {
       const { data: complaints } = await supabase
         .from("complaints")
         .select("*")
+        .is("deleted_at", null)
         .order("reported_at", { ascending: false });
 
       if (complaints) {
@@ -88,7 +89,8 @@ const Dashboard = () => {
       // Fetch admin count
       const { count } = await supabase
         .from("profiles")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .is("deleted_at", null);
 
       setStats((prev) => ({ ...prev, adminCount: count || 0 }));
     } catch (error) {

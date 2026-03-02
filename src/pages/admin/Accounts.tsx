@@ -32,15 +32,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDate } from "@/lib/utils";
+import type { Profile } from "@/lib/types";
 
-interface Profile {
-  id: string;
-  user_id: string;
-  username: string;
-  npk: string | null;
-  email: string | null;
-  created_at: string;
-}
+
 
 const Accounts = () => {
   const { toast } = useToast();
@@ -235,11 +230,12 @@ const Accounts = () => {
 
       handleCloseDialog();
       fetchProfiles();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Terjadi kesalahan";
       console.error("Error:", error);
       toast({
         title: "Gagal",
-        description: error.message || "Terjadi kesalahan",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -284,22 +280,17 @@ const Accounts = () => {
       setIsDeleteDialogOpen(false);
       setSelectedProfile(null);
       fetchProfiles();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Terjadi kesalahan";
       toast({
         title: "Gagal",
-        description: error.message || "Terjadi kesalahan",
+        description: msg,
         variant: "destructive",
       });
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
+
 
   if (isLoading) {
     return (

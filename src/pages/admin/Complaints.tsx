@@ -22,26 +22,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { STATUS_LABELS, STATUS_VARIANTS, ITEMS_PER_PAGE } from "@/lib/constants";
+import type { Complaint } from "@/lib/types";
 
-interface Complaint {
-  id: string;
-  ticket_number: string;
-  complaint_code?: string;
-  npk?: string;
-  reporter_name: string;
-  department: string;
-  item_name: string;
-  quantity: number;
-  description: string | null;
-  status: "pending" | "processing" | "completed";
-  reported_at: string;
-  processed_at: string | null;
-  completed_at: string | null;
-}
 
-const statusLabels = { pending: "Belum Diproses", processing: "Sedang Diproses", completed: "Selesai" };
-const statusVariants = { pending: "destructive", processing: "info", completed: "success" } as const;
-const ITEMS_PER_PAGE = 10;
 
 const Complaints = () => {
   const navigate = useNavigate();
@@ -196,7 +180,7 @@ const Complaints = () => {
                 <TableCell>{complaint.department}</TableCell>
                 <TableCell>{complaint.item_name}</TableCell>
                 <TableCell className="text-center">{complaint.quantity}</TableCell>
-                <TableCell><Badge variant={statusVariants[complaint.status]}>{statusLabels[complaint.status]}</Badge></TableCell>
+                <TableCell><Badge variant={STATUS_VARIANTS[complaint.status]}>{STATUS_LABELS[complaint.status]}</Badge></TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => navigate(`/admin/complaints/${complaint.id}`)} className="gap-1"><Edit className="h-4 w-4" />Edit</Button>

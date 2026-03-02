@@ -16,38 +16,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { STATUS_LABELS, STATUS_VARIANTS } from "@/lib/constants";
+import { formatDate } from "@/lib/utils";
+import type { Complaint } from "@/lib/types";
 
-interface Complaint {
-  id: string;
-  ticket_number: string;
-  reporter_name: string;
-  department: string;
-  status: "pending" | "processing" | "completed";
-  reported_at: string;
-}
 
-interface Stats {
-  total: number;
-  pending: number;
-  processing: number;
-  completed: number;
-  adminCount: number;
-}
-
-const statusLabels = {
-  pending: "Belum Diproses",
-  processing: "Sedang Diproses",
-  completed: "Selesai",
-};
-
-const statusVariants = {
-  pending: "destructive",
-  processing: "default",
-  completed: "success",
-} as const;
 
 const Dashboard = () => {
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState({
     total: 0,
     pending: 0,
     processing: 0,
@@ -100,13 +76,7 @@ const Dashboard = () => {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
+
 
   if (isLoading) {
     return (
@@ -194,8 +164,8 @@ const Dashboard = () => {
                             <TableCell>{complaint.reporter_name}</TableCell>
                             <TableCell>{complaint.department}</TableCell>
                             <TableCell>
-                              <Badge variant={statusVariants[complaint.status]}>
-                                {statusLabels[complaint.status]}
+                              <Badge variant={STATUS_VARIANTS[complaint.status]}>
+                                {STATUS_LABELS[complaint.status]}
                               </Badge>
                             </TableCell>
                             <TableCell>{formatDate(complaint.reported_at)}</TableCell>
@@ -211,8 +181,8 @@ const Dashboard = () => {
                       <div key={complaint.id} className="p-2 sm:p-3 border rounded-lg space-y-1.5 sm:space-y-2 bg-muted/30">
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-primary text-xs sm:text-sm truncate max-w-[140px] sm:max-w-none">{complaint.ticket_number}</span>
-                          <Badge variant={statusVariants[complaint.status]} className="text-xs">
-                            {statusLabels[complaint.status]}
+                          <Badge variant={STATUS_VARIANTS[complaint.status]} className="text-xs">
+                            {STATUS_LABELS[complaint.status]}
                           </Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-1 text-xs sm:text-sm">

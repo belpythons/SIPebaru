@@ -1,4 +1,3 @@
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Building2, Calendar, FileText, Clock, CheckCircle, Camera } from "lucide-react";
@@ -96,7 +95,7 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
                 <p className="text-xs sm:text-sm font-medium">{formatDate(complaint.reported_at)}</p>
               </div>
             </div>
-            
+
             {complaint.processed_at && (
               <div className="flex items-center gap-2 sm:gap-3">
                 <Clock className="h-4 w-4 text-blue-600 flex-shrink-0" />
@@ -106,7 +105,7 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
                 </div>
               </div>
             )}
-            
+
             {complaint.completed_at && (
               <div className="flex items-center gap-2 sm:gap-3">
                 <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
@@ -134,9 +133,9 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
               <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 mt-0.5 flex-shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs sm:text-sm text-muted-foreground">Foto Bukti Penyelesaian</p>
-                <img 
-                  src={complaint.completion_photo_url} 
-                  alt="Foto bukti penyelesaian" 
+                <img
+                  src={complaint.completion_photo_url}
+                  alt="Foto bukti penyelesaian"
                   className="mt-2 w-full max-w-xs rounded-lg border shadow-sm"
                 />
               </div>
@@ -149,7 +148,12 @@ export function StatusSearchResult({ complaint }: StatusSearchResultProps) {
             <span className="text-muted-foreground">Progress</span>
             <span className="font-medium">{config.progress}%</span>
           </div>
-          <Progress value={config.progress} className="h-2 sm:h-3" />
+          <div className="h-2 sm:h-3 w-full bg-secondary rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-300"
+              style={{ width: `${config.progress}%` }}
+            />
+          </div>
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
             <span>Diajukan</span>
             <span>Diproses</span>

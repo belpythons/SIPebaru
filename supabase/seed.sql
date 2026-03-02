@@ -4,6 +4,103 @@
 -- =============================================================================
 
 -- =============================================
+-- 0. AKUN DUMMY (auth.users + profiles + user_roles)
+--    Password semua akun: password123 (di-hash via pgcrypto)
+-- =============================================
+DO $$
+DECLARE
+  uid_superadmin uuid := gen_random_uuid();
+  uid_admin      uuid := gen_random_uuid();
+  uid_viewer     uuid := gen_random_uuid();
+  -- Pre-computed bcrypt hash for 'password123'
+  hashed_pw      text := '$2a$10$TheGjW.8zNWG8P/uiZsuouJ.w1c6u8pfH50CCHAbAnupwSIYYIkNa';
+BEGIN
+  -- ---- Insert auth.users ----
+  INSERT INTO auth.users (
+    id, instance_id, email, encrypted_password,
+    email_confirmed_at, role, aud,
+    raw_app_meta_data, raw_user_meta_data,
+    created_at, updated_at,
+    confirmation_token, recovery_token,
+    email_change_token_new, email_change_confirm_status,
+    is_sso_user, is_anonymous
+  ) VALUES
+    (
+      uid_superadmin, '00000000-0000-0000-0000-000000000000',
+      'superadmin@sipebaru.com', hashed_pw,
+      now(), 'authenticated', 'authenticated',
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      '{"username":"Budi IT"}'::jsonb,
+      now(), now(),
+      '', '',
+      '', 0,
+      false, false
+    ),
+    (
+      uid_admin, '00000000-0000-0000-0000-000000000000',
+      'admin.umum@sipebaru.com', hashed_pw,
+      now(), 'authenticated', 'authenticated',
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      '{"username":"Siti Logistik"}'::jsonb,
+      now(), now(),
+      '', '',
+      '', 0,
+      false, false
+    ),
+    (
+      uid_viewer, '00000000-0000-0000-0000-000000000000',
+      'pimpinan@sipebaru.com', hashed_pw,
+      now(), 'authenticated', 'authenticated',
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      '{"username":"Bapak Direktur"}'::jsonb,
+      now(), now(),
+      '', '',
+      '', 0,
+      false, false
+    )
+  ON CONFLICT (id) DO NOTHING;
+
+  -- ---- Insert auth.identities (Supabase Auth v2) ----
+  INSERT INTO auth.identities (
+    id, user_id, provider_id, provider,
+    identity_data, last_sign_in_at, created_at, updated_at
+  ) VALUES
+    (
+      gen_random_uuid(), uid_superadmin, uid_superadmin::text, 'email',
+      jsonb_build_object('sub', uid_superadmin::text, 'email', 'superadmin@sipebaru.com'),
+      now(), now(), now()
+    ),
+    (
+      gen_random_uuid(), uid_admin, uid_admin::text, 'email',
+      jsonb_build_object('sub', uid_admin::text, 'email', 'admin.umum@sipebaru.com'),
+      now(), now(), now()
+    ),
+    (
+      gen_random_uuid(), uid_viewer, uid_viewer::text, 'email',
+      jsonb_build_object('sub', uid_viewer::text, 'email', 'pimpinan@sipebaru.com'),
+      now(), now(), now()
+    )
+  ON CONFLICT DO NOTHING;
+
+  -- ---- Insert public.profiles ----
+  INSERT INTO public.profiles (user_id, username, email) VALUES
+    (uid_superadmin, 'Budi IT',         'superadmin@sipebaru.com'),
+    (uid_admin,      'Siti Logistik',   'admin.umum@sipebaru.com'),
+    (uid_viewer,     'Bapak Direktur',  'pimpinan@sipebaru.com')
+  ON CONFLICT (user_id) DO NOTHING;
+
+  -- ---- Insert public.user_roles ----
+  INSERT INTO public.user_roles (user_id, role) VALUES
+    (uid_superadmin, 'super_admin'),
+    (uid_superadmin, 'admin'),
+    (uid_admin,      'admin'),
+    (uid_viewer,     'viewer')
+  ON CONFLICT (user_id, role) DO NOTHING;
+END;
+$$;
+
+
+-- =============================================
 -- 1. UNIT KERJA (Departments)
 -- =============================================
 INSERT INTO public.departments (name) VALUES

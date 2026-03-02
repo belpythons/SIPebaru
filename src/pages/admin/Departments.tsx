@@ -36,13 +36,9 @@ import EmptyState from "@/components/EmptyState";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import type { Department } from "@/lib/types";
 
-interface Department {
-  id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-}
+
 
 const Departments = () => {
   const queryClient = useQueryClient();
@@ -84,7 +80,7 @@ const Departments = () => {
       setIsAddDialogOpen(false);
       setNewDepartmentName("");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       if (error.message?.includes("duplicate")) {
         toast.error("Departemen dengan nama tersebut sudah ada");
       } else {
@@ -110,7 +106,7 @@ const Departments = () => {
       setDepartmentToEdit(null);
       setEditDepartmentName("");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       if (error.message?.includes("duplicate")) {
         toast.error("Departemen dengan nama tersebut sudah ada");
       } else {

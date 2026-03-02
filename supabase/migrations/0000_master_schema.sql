@@ -1,9 +1,8 @@
 -- =============================================================================
--- SIPebaru: Skema Database Lengkap (Squashed)
+-- SIPebaru: Master Schema (Consolidated)
 -- Sistem Pengaduan Barang Rusak
 -- =============================================================================
--- File ini adalah konsolidasi dari seluruh migrasi pengembangan.
--- Jalankan file ini SATU KALI pada database Supabase yang masih kosong.
+-- File ini adalah satu-satunya migrasi. Jalankan pada database Supabase kosong.
 -- =============================================================================
 
 -- =============================================
@@ -75,7 +74,6 @@ CREATE TABLE public.departments (
 
 -- =============================================
 -- 6. TABEL: members_batch
--- Daftar Nomor Induk untuk validasi Portal Badge
 -- =============================================
 CREATE TABLE public.members_batch (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -89,7 +87,6 @@ CREATE TABLE public.members_batch (
 
 -- =============================================
 -- 7. TABEL: complaint_history
--- Riwayat perubahan status pengaduan
 -- =============================================
 CREATE TABLE public.complaint_history (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -104,7 +101,6 @@ CREATE TABLE public.complaint_history (
 
 -- =============================================
 -- 8. TABEL: activity_logs
--- Log semua aksi penting di sistem
 -- =============================================
 CREATE TABLE public.activity_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,7 +114,6 @@ CREATE TABLE public.activity_logs (
 
 -- =============================================
 -- 9. TABEL: kop_surat_sequence
--- Nomor urut Kop Surat per tahun, auto-reset
 -- =============================================
 CREATE TABLE public.kop_surat_sequence (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -140,8 +135,7 @@ ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kop_surat_sequence ENABLE ROW LEVEL SECURITY;
 
 -- =============================================
--- 11. INDEKS B-TREE
--- Optimasi kueri pada kolom yang sering difilter
+-- 11. INDEKS
 -- =============================================
 CREATE INDEX idx_complaints_status ON public.complaints(status);
 CREATE INDEX idx_complaints_department ON public.complaints(department);
@@ -161,7 +155,7 @@ CREATE INDEX idx_profiles_deleted_at ON public.profiles(deleted_at);
 -- 12. FUNGSI UTILITAS
 -- =============================================
 
--- Fungsi update_updated_at (trigger helper)
+-- Trigger helper: auto-update updated_at
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -174,7 +168,7 @@ BEGIN
 END;
 $$;
 
--- Fungsi pengecekan role tunggal
+-- Cek role tunggal
 CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
 RETURNS boolean
 LANGUAGE sql
@@ -188,7 +182,7 @@ AS $$
   )
 $$;
 
--- Fungsi pengecekan multi-role
+-- Cek multi-role (digunakan RLS)
 CREATE OR REPLACE FUNCTION public.has_any_role(_user_id uuid, _roles app_role[])
 RETURNS boolean
 LANGUAGE sql
@@ -227,14 +221,12 @@ BEGIN
   report_year := EXTRACT(YEAR FROM _report_date)::TEXT;
   report_year_int := EXTRACT(YEAR FROM _report_date)::INTEGER;
 
-  -- Hitung jumlah pengaduan di tahun yang sama + 1
   SELECT COUNT(*) + 1 INTO counter
   FROM public.complaints
   WHERE EXTRACT(YEAR FROM reported_at) = report_year_int;
 
   new_number := LPAD(counter::TEXT, 4, '0') || '/JOR-ADKOR/' || report_month || '/' || report_year;
 
-  -- Cek tabrakan dan increment jika perlu
   WHILE EXISTS (SELECT 1 FROM public.complaints WHERE ticket_number = new_number) LOOP
     counter := counter + 1;
     new_number := LPAD(counter::TEXT, 4, '0') || '/JOR-ADKOR/' || report_month || '/' || report_year;
@@ -276,7 +268,7 @@ BEGIN
 END;
 $$;
 
--- Generate nomor Kop Surat: 0001/JOR-ADKOR/JAN/2026
+-- Generate nomor Kop Surat
 CREATE OR REPLACE FUNCTION public.generate_kop_surat_number()
 RETURNS text
 LANGUAGE plpgsql
@@ -294,12 +286,10 @@ BEGIN
   current_month := EXTRACT(MONTH FROM now())::integer;
   month_abbr := month_names[current_month];
 
-  -- Insert baris tahun baru jika belum ada
   INSERT INTO public.kop_surat_sequence (year, last_sequence)
   VALUES (current_year, 0)
   ON CONFLICT (year) DO NOTHING;
 
-  -- Lock baris dan increment secara atomik
   UPDATE public.kop_surat_sequence
   SET last_sequence = last_sequence + 1, updated_at = now()
   WHERE year = current_year
@@ -309,7 +299,7 @@ BEGIN
 END;
 $$;
 
--- Cek status pengaduan via kode (untuk publik)
+-- Cek status pengaduan via kode (publik)
 CREATE OR REPLACE FUNCTION public.get_complaint_status(ticket_num text)
 RETURNS TABLE(
   ticket_number text,
@@ -455,12 +445,18 @@ CREATE TRIGGER trigger_log_complaint_status_change
   AFTER UPDATE ON public.complaints
   FOR EACH ROW EXECUTE FUNCTION public.log_complaint_status_change();
 
--- =============================================
--- 16. RLS POLICIES: complaints
--- =============================================
+-- =============================================================================
+-- 16. RLS POLICIES (Simplified)
+-- =============================================================================
+-- Prinsip:
+--   - Admin & Super Admin digabung jadi satu policy menggunakan has_any_role()
+--   - Viewer hanya bisa SELECT
+--   - Publik (anon) hanya bisa INSERT pengaduan & SELECT untuk cek status
+-- =============================================================================
 
--- Publik bisa submit pengaduan (dengan validasi input)
-CREATE POLICY "Siapa saja bisa submit pengaduan"
+-- ---- complaints ----
+
+CREATE POLICY "Publik bisa submit pengaduan"
   ON public.complaints FOR INSERT
   WITH CHECK (
     ticket_number IS NOT NULL AND length(ticket_number) BETWEEN 1 AND 50
@@ -473,288 +469,129 @@ CREATE POLICY "Siapa saja bisa submit pengaduan"
     AND (npk IS NULL OR (length(trim(npk)) >= 1 AND length(trim(npk)) <= 50))
   );
 
--- Publik bisa melihat pengaduan (untuk cek status)
-CREATE POLICY "Siapa saja bisa lihat pengaduan"
+CREATE POLICY "Publik bisa lihat pengaduan"
   ON public.complaints FOR SELECT
   USING (true);
 
--- Admin bisa lihat semua pengaduan
-CREATE POLICY "Admin bisa lihat semua pengaduan"
-  ON public.complaints FOR SELECT
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-
--- Super Admin dan Viewer bisa lihat pengaduan (non-deleted)
-CREATE POLICY "Super Admin dan Viewer bisa lihat pengaduan"
-  ON public.complaints FOR SELECT
-  TO authenticated
-  USING (
-    public.has_any_role(auth.uid(), ARRAY['super_admin', 'viewer']::app_role[])
-    AND deleted_at IS NULL
-  );
-
--- Admin bisa update pengaduan
-CREATE POLICY "Admin bisa update pengaduan"
+CREATE POLICY "Admin/SA bisa update pengaduan"
   ON public.complaints FOR UPDATE
   TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]))
+  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
 
--- Super Admin bisa update pengaduan
-CREATE POLICY "Super Admin bisa update pengaduan"
-  ON public.complaints FOR UPDATE
+CREATE POLICY "Admin/SA bisa hapus pengaduan"
+  ON public.complaints FOR DELETE
+  TO authenticated
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+
+-- ---- profiles ----
+
+CREATE POLICY "Authenticated bisa lihat profiles"
+  ON public.profiles FOR SELECT
+  TO authenticated
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin','viewer']::app_role[]));
+
+CREATE POLICY "Admin/SA bisa insert profiles"
+  ON public.profiles FOR INSERT
+  TO authenticated
+  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+
+CREATE POLICY "Admin/SA bisa update profiles"
+  ON public.profiles FOR UPDATE
+  TO authenticated
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+
+CREATE POLICY "Admin/SA bisa delete profiles"
+  ON public.profiles FOR DELETE
+  TO authenticated
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+
+-- ---- user_roles ----
+
+CREATE POLICY "Authenticated bisa lihat roles"
+  ON public.user_roles FOR SELECT
+  TO authenticated
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin','viewer']::app_role[]));
+
+CREATE POLICY "Admin/SA bisa insert roles"
+  ON public.user_roles FOR INSERT
+  TO authenticated
+  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+
+CREATE POLICY "Admin/SA bisa delete roles"
+  ON public.user_roles FOR DELETE
+  TO authenticated
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+
+-- ---- departments ----
+
+CREATE POLICY "Publik bisa lihat unit kerja"
+  ON public.departments FOR SELECT
+  USING (true);
+
+CREATE POLICY "Admin/SA bisa insert unit kerja"
+  ON public.departments FOR INSERT
+  TO authenticated
+  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+
+CREATE POLICY "Admin/SA bisa update unit kerja"
+  ON public.departments FOR UPDATE
+  TO authenticated
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+
+CREATE POLICY "Admin/SA bisa delete unit kerja"
+  ON public.departments FOR DELETE
+  TO authenticated
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+
+-- ---- members_batch ----
+
+CREATE POLICY "Publik bisa validasi nomor induk"
+  ON public.members_batch FOR SELECT
+  USING (deleted_at IS NULL);
+
+CREATE POLICY "SA bisa kelola members batch"
+  ON public.members_batch FOR ALL
   TO authenticated
   USING (public.has_role(auth.uid(), 'super_admin'))
   WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
 
--- Admin bisa hapus pengaduan
-CREATE POLICY "Admin bisa hapus pengaduan"
-  ON public.complaints FOR DELETE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
+-- ---- complaint_history ----
 
--- Super Admin bisa hapus pengaduan
-CREATE POLICY "Super Admin bisa hapus pengaduan"
-  ON public.complaints FOR DELETE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'));
-
--- =============================================
--- 17. RLS POLICIES: profiles
--- =============================================
-
--- Admin bisa lihat semua profiles
-CREATE POLICY "Admin bisa lihat profiles"
-  ON public.profiles FOR SELECT
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-
--- Super Admin dan Viewer bisa lihat profiles
-CREATE POLICY "Super Admin dan Viewer bisa lihat profiles"
-  ON public.profiles FOR SELECT
-  TO authenticated
-  USING (
-    public.has_any_role(auth.uid(), ARRAY['super_admin', 'viewer']::app_role[])
-  );
-
--- Admin bisa insert profiles
-CREATE POLICY "Admin bisa insert profiles"
-  ON public.profiles FOR INSERT
-  TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
-
--- Super Admin bisa insert profiles
-CREATE POLICY "Super Admin bisa insert profiles"
-  ON public.profiles FOR INSERT
-  TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
-
--- Admin bisa update profiles
-CREATE POLICY "Admin bisa update profiles"
-  ON public.profiles FOR UPDATE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-
--- Super Admin bisa update profiles
-CREATE POLICY "Super Admin bisa update profiles"
-  ON public.profiles FOR UPDATE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'));
-
--- Admin bisa delete profiles
-CREATE POLICY "Admin bisa delete profiles"
-  ON public.profiles FOR DELETE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-
--- Super Admin bisa delete profiles
-CREATE POLICY "Super Admin bisa delete profiles"
-  ON public.profiles FOR DELETE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'));
-
--- =============================================
--- 18. RLS POLICIES: user_roles
--- =============================================
-
--- Admin bisa lihat user roles
-CREATE POLICY "Admin bisa lihat user roles"
-  ON public.user_roles FOR SELECT
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-
--- Super Admin dan Viewer bisa lihat user roles
-CREATE POLICY "Super Admin dan Viewer bisa lihat roles"
-  ON public.user_roles FOR SELECT
-  TO authenticated
-  USING (
-    public.has_any_role(auth.uid(), ARRAY['super_admin', 'viewer']::app_role[])
-  );
-
--- Admin bisa insert user roles
-CREATE POLICY "Admin bisa insert user roles"
-  ON public.user_roles FOR INSERT
-  TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
-
--- Super Admin bisa insert roles
-CREATE POLICY "Super Admin bisa insert roles"
-  ON public.user_roles FOR INSERT
-  TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
-
--- Admin bisa delete user roles
-CREATE POLICY "Admin bisa delete user roles"
-  ON public.user_roles FOR DELETE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
-
--- Super Admin bisa delete roles
-CREATE POLICY "Super Admin bisa delete roles"
-  ON public.user_roles FOR DELETE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'));
-
--- =============================================
--- 19. RLS POLICIES: departments
--- =============================================
-
--- Siapa saja bisa lihat unit kerja (publik)
-CREATE POLICY "Siapa saja bisa lihat unit kerja"
-  ON public.departments FOR SELECT
-  USING (true);
-
--- Super Admin dan Viewer bisa lihat unit kerja (non-deleted)
-CREATE POLICY "Super Admin dan Viewer bisa lihat unit kerja"
-  ON public.departments FOR SELECT
-  TO authenticated
-  USING (
-    public.has_any_role(auth.uid(), ARRAY['super_admin', 'viewer']::app_role[])
-    AND deleted_at IS NULL
-  );
-
--- Admin bisa kelola unit kerja
-CREATE POLICY "Admin bisa insert unit kerja"
-  ON public.departments FOR INSERT
-  WITH CHECK (has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Admin bisa update unit kerja"
-  ON public.departments FOR UPDATE
-  USING (has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Admin bisa delete unit kerja"
-  ON public.departments FOR DELETE
-  USING (has_role(auth.uid(), 'admin'));
-
--- Super Admin bisa kelola unit kerja
-CREATE POLICY "Super Admin bisa insert unit kerja"
-  ON public.departments FOR INSERT
-  TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
-
-CREATE POLICY "Super Admin bisa update unit kerja"
-  ON public.departments FOR UPDATE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'));
-
-CREATE POLICY "Super Admin bisa delete unit kerja"
-  ON public.departments FOR DELETE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'));
-
--- =============================================
--- 20. RLS POLICIES: members_batch
--- =============================================
-
-CREATE POLICY "Siapa saja bisa validasi nomor induk"
-  ON public.members_batch FOR SELECT
-  USING (deleted_at IS NULL);
-
-CREATE POLICY "Super Admin kelola members batch"
-  ON public.members_batch FOR ALL
-  TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'super_admin')
-  )
-  WITH CHECK (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'super_admin')
-  );
-
--- =============================================
--- 21. RLS POLICIES: complaint_history
--- =============================================
-
-CREATE POLICY "Admin bisa lihat riwayat pengaduan"
+CREATE POLICY "Authenticated bisa lihat riwayat"
   ON public.complaint_history FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_roles
-      WHERE user_id = auth.uid() AND role IN ('admin', 'super_admin', 'viewer')
-    )
-  );
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin','viewer']::app_role[]));
 
-CREATE POLICY "Sistem bisa insert riwayat"
+CREATE POLICY "Admin/SA bisa insert riwayat"
   ON public.complaint_history FOR INSERT
   TO authenticated
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.user_roles
-      WHERE user_id = auth.uid() AND role IN ('admin', 'super_admin')
-    )
-  );
+  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
 
--- =============================================
--- 22. RLS POLICIES: activity_logs
--- =============================================
+-- ---- activity_logs ----
 
-CREATE POLICY "Super Admin bisa lihat log aktivitas"
+CREATE POLICY "SA bisa lihat log aktivitas"
   ON public.activity_logs FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'super_admin')
-  );
+  USING (public.has_role(auth.uid(), 'super_admin'));
 
-CREATE POLICY "Admin bisa insert log aktivitas"
+CREATE POLICY "Admin/SA bisa insert log"
   ON public.activity_logs FOR INSERT
   TO authenticated
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.user_roles
-      WHERE user_id = auth.uid() AND role IN ('admin', 'super_admin')
-    )
-  );
+  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
 
 CREATE POLICY "Anon bisa insert log badge"
   ON public.activity_logs FOR INSERT
   WITH CHECK (true);
 
--- =============================================
--- 23. RLS POLICIES: kop_surat_sequence
--- =============================================
+-- ---- kop_surat_sequence ----
 
-CREATE POLICY "Admin bisa akses sequence kop surat"
+CREATE POLICY "Admin/SA bisa akses kop surat"
   ON public.kop_surat_sequence FOR ALL
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_roles
-      WHERE user_id = auth.uid() AND role IN ('admin', 'super_admin')
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.user_roles
-      WHERE user_id = auth.uid() AND role IN ('admin', 'super_admin')
-    )
-  );
+  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]))
+  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
 
--- =============================================
--- 24. STORAGE BUCKET: complaint-photos
--- =============================================
--- CATATAN: Bucket storage harus dibuat melalui Supabase Dashboard
--- atau menggunakan Supabase CLI. Buat bucket bernama 'complaint-photos'
--- dengan pengaturan publik (public bucket).
 -- =============================================================================
--- SELESAI - Skema database SIPebaru siap digunakan
+-- SELESAI - Master Schema SIPebaru
 -- =============================================================================

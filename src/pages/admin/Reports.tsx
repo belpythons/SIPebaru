@@ -15,26 +15,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Clock, Loader2 as ProcessingIcon, CheckCircle } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
-interface Complaint {
-  id: string;
-  ticket_number: string;
-  complaint_code: string;
-  npk: string | null;
-  reporter_name: string;
-  department: string;
-  item_name: string;
-  quantity: number;
-  description: string | null;
-  status: "pending" | "processing" | "completed";
-  reported_at: string;
-  processed_at: string | null;
-  completed_at: string | null;
-}
-
-const statusLabels = { pending: "Belum Diproses", processing: "Sedang Diproses", completed: "Selesai" };
-const statusVariants = { pending: "destructive", processing: "default", completed: "secondary" } as const;
-const ITEMS_PER_PAGE = 10;
+import { STATUS_LABELS, STATUS_VARIANTS, ITEMS_PER_PAGE } from "@/lib/constants";
+import { formatDate, formatDateFull } from "@/lib/utils";
+import type { Complaint } from "@/lib/types";
 
 const Reports = () => {
   const { toast } = useToast();
@@ -89,8 +72,7 @@ const Reports = () => {
 
   const handleFilter = () => { filterByDate(complaints, dateRange.from, dateRange.to); };
 
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-  const formatDateFull = (dateStr: string) => new Date(dateStr).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+
 
   const downloadCSV = () => {
     const BOM = "\uFEFF";
@@ -103,7 +85,7 @@ const Reports = () => {
     const rows = filteredComplaints.map((c, index) => [
       index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
       c.completed_at ? formatDate(c.completed_at) : "-", c.npk || "-",
-      c.reporter_name, c.department, c.item_name, c.quantity, c.description || "-", statusLabels[c.status],
+      c.reporter_name, c.department, c.item_name, c.quantity, c.description || "-", STATUS_LABELS[c.status],
     ]);
 
     const escapeCell = (cell: any) => {
@@ -168,7 +150,7 @@ const Reports = () => {
       const tableData = filteredComplaints.map((c, index) => [
         index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
         c.completed_at ? formatDate(c.completed_at) : "-", c.npk || "-",
-        c.reporter_name, c.department, c.item_name, c.quantity, statusLabels[c.status],
+        c.reporter_name, c.department, c.item_name, c.quantity, STATUS_LABELS[c.status],
       ]);
 
       const tableWidth = pageWidth - 30; // 15mm margin tiap sisi
@@ -262,9 +244,10 @@ const Reports = () => {
 
       doc.save(`laporan-pengaduan-${dateRange.from}-${dateRange.to}.pdf`);
       toast({ title: "Download berhasil", description: "File PDF berhasil diunduh" });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Terjadi kesalahan saat membuat file PDF";
       console.error("Error generating PDF:", error);
-      toast({ title: "Gagal membuat PDF", description: error.message || "Terjadi kesalahan saat membuat file PDF", variant: "destructive" });
+      toast({ title: "Gagal membuat PDF", description: msg, variant: "destructive" });
     }
   };
 
@@ -333,7 +316,7 @@ const Reports = () => {
                       <TableCell>{complaint.department}</TableCell>
                       <TableCell>{complaint.item_name}</TableCell>
                       <TableCell className="text-center">{complaint.quantity}</TableCell>
-                      <TableCell><Badge variant={statusVariants[complaint.status]}>{statusLabels[complaint.status]}</Badge></TableCell>
+                      <TableCell><Badge variant={STATUS_VARIANTS[complaint.status]}>{STATUS_LABELS[complaint.status]}</Badge></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -347,7 +330,7 @@ const Reports = () => {
                 <div key={complaint.id} className="p-4 border rounded-lg space-y-3 bg-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">#{startIndex + index + 1}</span>
-                    <Badge variant={statusVariants[complaint.status]}>{statusLabels[complaint.status]}</Badge>
+                    <Badge variant={STATUS_VARIANTS[complaint.status]}>{STATUS_LABELS[complaint.status]}</Badge>
                   </div>
                   <div className="font-semibold text-primary">{complaint.ticket_number}</div>
                   <div className="text-xs font-mono text-muted-foreground">Kode: {complaint.complaint_code}</div>

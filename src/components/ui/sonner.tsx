@@ -1,5 +1,7 @@
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast } from "sonner";
+
+// Vite project — no next-themes. Provide a simple fallback.
+const useTheme = () => ({ theme: "system" as const });
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 

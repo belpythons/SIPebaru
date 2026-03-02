@@ -235,7 +235,7 @@ supabase link --project-ref YOUR_PROJECT_ID
 supabase db push
 
 # Jalankan seed data
-supabase db seed
+supabase db reset --linked
 ```
 
 #### Buat Storage Bucket

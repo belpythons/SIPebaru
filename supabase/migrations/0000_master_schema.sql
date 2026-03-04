@@ -5,6 +5,9 @@
 -- File ini adalah satu-satunya migrasi. Jalankan pada database Supabase kosong.
 -- =============================================================================
 
+-- Aktifkan ekstensi kriptografi untuk hashing password saat seed
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- =============================================
 -- 1. ENUM TYPES
 -- =============================================
@@ -174,7 +177,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, auth, extensions
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.user_roles
@@ -188,7 +191,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, auth, extensions
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.user_roles
@@ -347,7 +350,7 @@ END;
 $$;
 
 -- Setup admin pertama (first-time setup)
-CREATE OR REPLACE FUNCTION public.setup_first_admin(_user_id uuid, _username text)
+CREATE OR REPLACE FUNCTION public.setup_first_admin(_user_id uuid, _username text, _npk text DEFAULT NULL)
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -368,10 +371,11 @@ BEGIN
 
   SELECT email INTO user_email FROM auth.users WHERE id = _user_id;
 
-  INSERT INTO public.profiles (user_id, username, email)
-  VALUES (_user_id, _username, user_email)
+  INSERT INTO public.profiles (user_id, username, npk, email)
+  VALUES (_user_id, _username, _npk, user_email)
   ON CONFLICT (user_id) DO UPDATE
     SET username = EXCLUDED.username,
+        npk = EXCLUDED.npk,
         email = EXCLUDED.email,
         updated_at = now();
 
@@ -486,42 +490,49 @@ CREATE POLICY "Admin/SA bisa hapus pengaduan"
 
 -- ---- profiles ----
 
-CREATE POLICY "Authenticated bisa lihat profiles"
+CREATE POLICY "SA/Admin/Viewer bisa lihat profiles"
   ON public.profiles FOR SELECT
   TO authenticated
   USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin','viewer']::app_role[]));
 
-CREATE POLICY "Admin/SA bisa insert profiles"
+CREATE POLICY "SA bisa insert profiles"
   ON public.profiles FOR INSERT
   TO authenticated
-  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
 
-CREATE POLICY "Admin/SA bisa update profiles"
+CREATE POLICY "SA/own bisa update profiles"
   ON public.profiles FOR UPDATE
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  USING (
+    public.has_role(auth.uid(), 'super_admin')
+    OR user_id = auth.uid()
+  )
+  WITH CHECK (
+    public.has_role(auth.uid(), 'super_admin')
+    OR user_id = auth.uid()
+  );
 
-CREATE POLICY "Admin/SA bisa delete profiles"
+CREATE POLICY "SA bisa delete profiles"
   ON public.profiles FOR DELETE
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  USING (public.has_role(auth.uid(), 'super_admin'));
 
 -- ---- user_roles ----
 
-CREATE POLICY "Authenticated bisa lihat roles"
+CREATE POLICY "SA/Admin/Viewer bisa lihat roles"
   ON public.user_roles FOR SELECT
   TO authenticated
   USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin','viewer']::app_role[]));
 
-CREATE POLICY "Admin/SA bisa insert roles"
+CREATE POLICY "SA bisa insert roles"
   ON public.user_roles FOR INSERT
   TO authenticated
-  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
 
-CREATE POLICY "Admin/SA bisa delete roles"
+CREATE POLICY "SA bisa delete roles"
   ON public.user_roles FOR DELETE
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  USING (public.has_role(auth.uid(), 'super_admin'));
 
 -- ---- departments ----
 

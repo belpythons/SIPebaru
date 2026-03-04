@@ -6,16 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
 
 const Setup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [npk, setNpk] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
-  const [hasAdmin, setHasAdmin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,10 +30,11 @@ const Setup = () => {
       const { count } = await supabase
         .from("user_roles")
         .select("*", { count: "exact", head: true })
-        .eq("role", "admin");
+        .in("role", ["admin", "super_admin"]);
 
       if (count && count > 0) {
-        setHasAdmin(true);
+        navigate("/login", { replace: true });
+        return;
       }
     } catch (error) {
       console.error("Error checking admin:", error);
@@ -85,10 +88,10 @@ const Setup = () => {
         }
 
         if (signInData.user) {
-          // Use the security definer function to setup admin
           const { error: setupError } = await supabase.rpc("setup_first_admin", {
             _user_id: signInData.user.id,
             _username: username,
+            _npk: npk || null,
           });
 
           if (setupError) throw setupError;
@@ -106,10 +109,10 @@ const Setup = () => {
       if (authError) throw authError;
 
       if (authData.user) {
-        // Use the security definer function to setup admin
         const { error: setupError } = await supabase.rpc("setup_first_admin", {
           _user_id: authData.user.id,
           _username: username,
+          _npk: npk || null,
         });
 
         if (setupError) throw setupError;
@@ -121,11 +124,12 @@ const Setup = () => {
 
         navigate("/login");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Gagal membuat akun admin";
       console.error("Setup error:", error);
       toast({
         title: "Error",
-        description: error.message || "Gagal membuat akun admin",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -133,29 +137,11 @@ const Setup = () => {
     }
   };
 
+  // Selama pengecekan, tampilkan spinner saja
   if (isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (hasAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md shadow-card">
-          <CardContent className="pt-6 text-center">
-            <ShieldCheck className="h-16 w-16 text-primary mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Setup Sudah Selesai</h2>
-            <p className="text-muted-foreground mb-4">
-              Admin sudah terdaftar. Silakan login untuk melanjutkan.
-            </p>
-            <Button onClick={() => navigate("/login")} className="w-full">
-              Ke Halaman Login
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -188,6 +174,16 @@ const Setup = () => {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="npk">NPK (Opsional)</Label>
+              <Input
+                id="npk"
+                type="text"
+                placeholder="Masukkan NPK (opsional)"
+                value={npk}
+                onChange={(e) => setNpk(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -200,25 +196,47 @@ const Setup = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Masukkan password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Masukkan password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Konfirmasi password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Konfirmasi password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (

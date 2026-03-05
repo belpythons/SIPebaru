@@ -101,15 +101,6 @@ Buka file `supabase/config.toml` dan tambahkan ID proyek Anda serta konfigurasi 
 
 ```toml
 project_id = "mvzfzmjlcuuwdaesehqq"
-
-[functions.update-admin-password]
-verify_jwt = true
-
-[functions.create-admin]
-verify_jwt = true
-
-[functions.admin-create-user]
-verify_jwt = true
 ```
 
 ### 4. Connect Supabase & Push Database

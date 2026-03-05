@@ -213,7 +213,7 @@ AS $$
 DECLARE
   new_number TEXT;
   counter INTEGER;
-  month_names TEXT[] := ARRAY['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  month_names TEXT[] := ARRAY['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGS','SEP','OKT','NOV','DES'];
   report_month TEXT;
   report_year TEXT;
   report_year_int INTEGER;
@@ -224,9 +224,10 @@ BEGIN
   report_year := EXTRACT(YEAR FROM _report_date)::TEXT;
   report_year_int := EXTRACT(YEAR FROM _report_date)::INTEGER;
 
-  SELECT COUNT(*) + 1 INTO counter
+  SELECT COALESCE(COUNT(*), 0) + 1 INTO counter
   FROM public.complaints
-  WHERE EXTRACT(YEAR FROM reported_at) = report_year_int;
+  WHERE EXTRACT(YEAR FROM reported_at) = report_year_int
+    AND deleted_at IS NULL;
 
   new_number := LPAD(counter::TEXT, 4, '0') || '/JOR-ADKOR/' || report_month || '/' || report_year;
 
@@ -345,6 +346,7 @@ BEGIN
     c.completion_photo_url
   FROM complaints c
   WHERE UPPER(c.complaint_code) = search_term
+     OR UPPER(c.ticket_number) = search_term
   LIMIT 1;
 END;
 $$;

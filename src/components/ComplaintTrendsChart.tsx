@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -13,17 +13,13 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
-import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
-import { format, subDays, eachDayOfInterval, startOfDay } from "date-fns";
-import { id } from "date-fns/locale";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
+import { format, subDays, eachDayOfInterval } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import type { Complaint } from "@/lib/types";
 
-interface Complaint {
-  id: string;
-  department: string;
-  reported_at: string;
-  status: string;
+interface Props {
+  data: Complaint[];
 }
 
 interface ChartData {
@@ -38,84 +34,42 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const ComplaintTrendsChart = () => {
-  const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [departments, setDepartments] = useState<string[]>([]);
+const ComplaintTrendsChart = ({ data }: Props) => {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
+  const departments = useMemo(
+    () => [...new Set(data.map((c) => c.department))].sort(),
+    [data]
+  );
 
-  useEffect(() => {
-    fetchChartData();
-  }, [selectedDepartment]);
+  const chartData = useMemo<ChartData[]>(() => {
+    const thirtyDaysAgo = subDays(new Date(), 30);
 
-  const fetchDepartments = async () => {
-    const { data } = await supabase
-      .from("complaints")
-      .select("department")
-      .order("department");
+    // Filter by department if needed
+    const filtered = data.filter((c) => {
+      if (selectedDepartment !== "all" && c.department !== selectedDepartment) return false;
+      return new Date(c.reported_at) >= thirtyDaysAgo;
+    });
 
-    if (data) {
-      const uniqueDepts = [...new Set(data.map((c) => c.department))];
-      setDepartments(uniqueDepts);
-    }
-  };
+    // Generate all dates in the range
+    const dateRange = eachDayOfInterval({ start: thirtyDaysAgo, end: new Date() });
 
-  const fetchChartData = async () => {
-    setIsLoading(true);
-    try {
-      // Get complaints from last 30 days
-      const thirtyDaysAgo = subDays(new Date(), 30);
+    // Count complaints per day
+    const countsByDate = new Map<string, number>();
+    dateRange.forEach((date) => countsByDate.set(format(date, "yyyy-MM-dd"), 0));
 
-      let query = supabase
-        .from("complaints")
-        .select("id, department, reported_at, status")
-        .gte("reported_at", thirtyDaysAgo.toISOString())
-        .order("reported_at", { ascending: true });
-
-      if (selectedDepartment !== "all") {
-        query = query.eq("department", selectedDepartment);
+    filtered.forEach((complaint) => {
+      const dateKey = format(new Date(complaint.reported_at), "yyyy-MM-dd");
+      if (countsByDate.has(dateKey)) {
+        countsByDate.set(dateKey, (countsByDate.get(dateKey) || 0) + 1);
       }
+    });
 
-      const { data: complaints } = await query;
-
-      // Generate all dates in the range
-      const dateRange = eachDayOfInterval({
-        start: thirtyDaysAgo,
-        end: new Date(),
-      });
-
-      // Count complaints per day
-      const countsByDate = new Map<string, number>();
-      dateRange.forEach((date) => {
-        countsByDate.set(format(date, "yyyy-MM-dd"), 0);
-      });
-
-      complaints?.forEach((complaint) => {
-        const dateKey = format(new Date(complaint.reported_at), "yyyy-MM-dd");
-        if (countsByDate.has(dateKey)) {
-          countsByDate.set(dateKey, (countsByDate.get(dateKey) || 0) + 1);
-        }
-      });
-
-      // Convert to chart data
-      const data: ChartData[] = Array.from(countsByDate.entries()).map(
-        ([date, count]) => ({
-          date: format(new Date(date), "dd MMM", { locale: id }),
-          count,
-        })
-      );
-
-      setChartData(data);
-    } catch (error) {
-      console.error("Error fetching chart data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    return Array.from(countsByDate.entries()).map(([date, count]) => ({
+      date: format(new Date(date), "dd MMM", { locale: idLocale }),
+      count,
+    }));
+  }, [data, selectedDepartment]);
 
   return (
     <Card className="shadow-card">
@@ -136,9 +90,7 @@ const ComplaintTrendsChart = () => {
         </Select>
       </CardHeader>
       <CardContent className="px-2 sm:px-6">
-        {isLoading ? (
-          <Skeleton className="h-[250px] sm:h-[300px] w-full" />
-        ) : chartData.length === 0 ? (
+        {chartData.length === 0 ? (
           <div className="flex items-center justify-center h-[250px] sm:h-[300px] text-muted-foreground">
             Tidak ada data untuk ditampilkan
           </div>

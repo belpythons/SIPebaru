@@ -28,9 +28,9 @@ const Setup = () => {
   const checkExistingAdmin = async () => {
     try {
       const { count } = await supabase
-        .from("user_roles")
+        .from("profiles")
         .select("*", { count: "exact", head: true })
-        .in("role", ["admin", "super_admin"]);
+        .is("deleted_at", null);
 
       if (count && count > 0) {
         navigate("/login", { replace: true });

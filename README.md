@@ -67,6 +67,8 @@ Pastikan tools berikut sudah terinstall:
 
 ## 🚀 Local Development Setup
 
+Berikut adalah panduan mendetail dari awal hingga aplikasi siap dijalankan.
+
 ### 1. Clone & Install Dependencies
 
 ```bash
@@ -79,13 +81,13 @@ bun install
 
 ### 2. Setup Environment Variables
 
-Salin file template dan isi dengan kredensial Supabase Anda:
+Salin file template lingkungan dan ubah namanya menjadi `.env` (bukan `.env.local`).
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Isi variabel berikut:
+Buka file `.env` dan isi variabel berikut dengan kredensial dari dashboard Supabase Anda (Project Settings -> API):
 
 ```env
 VITE_SUPABASE_PROJECT_ID=your_project_id
@@ -93,33 +95,79 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
 VITE_SUPABASE_URL=https://your_project_id.supabase.co
 ```
 
-### 3. Setup Database (Remote via Supabase CLI)
+### 3. Konfigurasi Supabase Config (`config.toml`)
+
+Buka file `supabase/config.toml` dan tambahkan ID proyek Anda serta konfigurasi JWT untuk Edge Functions. Pastikan blok berikut ada di dalam file tersebut:
+
+```toml
+project_id = "mvzfzmjlcuuwdaesehqq"
+
+[functions.update-admin-password]
+verify_jwt = true
+
+[functions.create-admin]
+verify_jwt = true
+
+[functions.admin-create-user]
+verify_jwt = true
+```
+
+### 4. Connect Supabase & Push Database
 
 > ⚠️ **Metode ini tidak memerlukan Docker lokal.** Semua operasi dilakukan langsung ke database Supabase remote.
 
 ```bash
-# Login ke akun Supabase
+# Login ke akun Supabase melalui CLI
 supabase login
 
-# Hubungkan proyek lokal ke remote Supabase
-supabase link --project-ref ewhrjsjsgnfftnoipwyf
+# Hubungkan proyek lokal ke remote Supabase (ganti ID dengan Project Reference Anda)
+supabase link --project-ref mvzfzmjlcuuwdaesehqq
 
-# Push schema migrasi ke remote database
-supabase db push
-
-# Reset database: terapkan schema + masukkan data seeder
+# Push schema migrasi & terapkan seeder data (Departments, Members, dan Pengaduan dummy)
 supabase db reset --linked
 ```
 
-> **💡 Catatan:** Perintah `supabase db reset --linked` akan menerapkan seluruh schema (`0000_master_schema.sql`) sekaligus memasukkan data seeder (`seed.sql`) yang berisi 7 unit kerja, 25 data member batch, dan 220 pengaduan dummy — langsung ke remote database tanpa memerlukan Docker lokal.
+### 5. Deploy Edge Functions
 
-### 4. Jalankan Development Server
+Setelah mengatur `config.toml`, deploy ketiga fungsi manajemen akun ke proyek Supabase Anda:
+
+```bash
+supabase functions deploy create-admin
+supabase functions deploy admin-create-user
+supabase functions deploy update-admin-password
+```
+
+### 6. Setup Storage Bucket (Manual)
+
+Penyimpanan foto keluhan harus dibuat secara manual di dashboard:
+
+1. Masuk ke **Supabase Dashboard > Storage**.
+2. Klik **New Bucket** dan beri nama sesuai dengan yang digunakan di aplikasi (misalnya: `complaints` atau `attachments`).
+3. Pastikan Anda mengaktifkan *toggle* **Public bucket**.
+4. Buka tab **Policies** di bucket tersebut dan tambahkan aturan:
+   * *Public* dapat melakukan **SELECT** (Melihat gambar).
+   * *Authenticated Users* dapat melakukan **INSERT** (Mengunggah gambar).
+
+### 7. Konfigurasi Auth Redirect URL
+
+Agar pengguna bisa login tanpa diblokir oleh sistem keamanan Supabase, tambahkan asal URL aplikasi Anda:
+
+1. Masuk ke **Supabase Dashboard > Authentication > URL Configuration**.
+2. Di bagian **Site URL**, masukkan: `http://localhost:5173` (atau port yang aktif).
+3. Di bagian **Redirect URLs**, tambahkan URL *wildcard* berikut:
+   * `http://localhost:5173/**`
+   * `https://www.sipebaru.com/**` *(URL untuk production)*
+4. Klik **Save**.
+
+### 8. Jalankan Development Server
 
 ```bash
 npm run dev
+# atau
+bun run dev
 ```
 
-Aplikasi berjalan di `http://localhost:5173`.
+Aplikasi kini berjalan di `http://localhost:5173`.
 
 ---
 
@@ -129,29 +177,33 @@ Setelah development server berjalan:
 
 1. Buka `http://localhost:5173/setup` di browser.
 2. Isi form: **Username**, **NPK** (opsional), **Email**, dan **Password**.
-3. Klik **"Buat Akun Admin"** — akun Super Admin pertama akan dibuat.
-4. **Rute `/setup` otomatis terkunci** setelah proses ini. Akses selanjutnya akan langsung di-redirect ke `/login`.
-5. Login di `http://localhost:5173/login` dengan kredensial yang baru dibuat.
+3. Klik **"Buat Akun Admin"** — akun Super Admin pertama akan otomatis dibuat dan disimpan.
+4. **Rute `/setup` otomatis terkunci** setelah proses ini. Akses selanjutnya akan langsung diarahkan ke `/login`.
+5. Login di `http://localhost:5173/login` dengan kredensial yang baru saja dibuat.
 
 ---
 
-## ⚙️ CI/CD — GitHub Actions
+## ⚙️ CI/CD — GitHub Actions (Database Backup)
 
-Repository ini dilengkapi workflow otomatis untuk backup database.
+Repository ini dilengkapi *workflow* otomatis (`backup.yml`) untuk mencadangkan database Anda.
 
-### 🗄️ Database Backup (`backup.yml`)
+* **Jadwal**: Otomatis setiap **5 hari** (cron: `0 0 */5 * *`).
+* **Trigger Manual**: Dapat dijalankan kapan saja melalui tab **Actions** di GitHub.
+* **Output**: File `.sql` tersimpan sebagai *GitHub Artifact* selama **90 hari**.
 
-- **Jadwal**: Otomatis setiap **5 hari** (cron: `0 0 */5 * *`).
-- **Trigger Manual**: Bisa dijalankan kapan saja dari tab **Actions** di GitHub.
-- **Output**: File `.sql` tersimpan sebagai GitHub Artifact selama **90 hari**.
+### Setup GitHub Secrets (Sangat Penting)
 
-**Konfigurasi yang diperlukan:**
+*Runner* standar milik GitHub Actions **tidak mendukung IPv6**, sehingga URL koneksi database standar (`db.ref.supabase.co`) akan gagal (*Network is unreachable*). Anda **wajib menggunakan URL Connection Pooler (IPv4)**.
 
-Tambahkan secret di **Settings → Secrets and variables → Actions**:
-
-| Secret Name | Format |
-|-------------|--------|
-| `SUPABASE_DB_URL` | `postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres` |
+1. Buka **Supabase Dashboard > Settings > Database**.
+2. Pada bagian **Connection string**, centang kotak **"Use connection pooling"** (pilih **Session** jika ada opsi).
+3. Buka tab **URI** dan salin URL tersebut. Pastikan port-nya adalah `5432`.
+   *Contoh Format: `postgresql://postgres.xxx:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres`*
+4. Buka repositori GitHub Anda, masuk ke **Settings > Secrets and variables > Actions**.
+5. Klik **New repository secret**.
+   * Name: `SUPABASE_DB_URL`
+   * Secret: *Paste URL Pooler tadi, dan jangan lupa ganti tulisan `[PASSWORD]` dengan password database Anda yang asli.*
+6. Simpan secret dan jalankan (Re-run) *workflow* dari tab Actions untuk mengujinya.
 
 ---
 
@@ -182,10 +234,15 @@ SIPebaru/
 │   ├── App.tsx               # Router utama
 │   └── main.tsx
 ├── supabase/
+│   ├── functions/                   # Edge Functions
+│   │   ├── admin-create-user/
+│   │   ├── create-admin/
+│   │   └── update-admin-password/
 │   ├── migrations/
 │   │   └── 0000_master_schema.sql   # Schema + RLS + RPC
-│   └── seed.sql                     # Data seeder
-├── .env.example
+│   ├── config.toml                  # Konfigurasi Supabase lokal & Edge Functions
+│   └── seed.sql                     # Data seeder dummy
+├── .env                             # Variabel lingkungan
 ├── package.json
 └── vite.config.ts
 ```

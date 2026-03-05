@@ -50,8 +50,9 @@ INSERT INTO public.members_batch (nomor_induk, nama, unit_kerja) VALUES
 ON CONFLICT (nomor_induk) DO NOTHING;
 
 -- =============================================
--- 3. PENGADUAN DUMMY (200+ records via generate_series)
---    Tersebar di 12 bulan terakhir, status & departemen acak
+-- 3. PENGADUAN DUMMY (300 records via generate_series)
+--    Tersebar merata di 12 bulan terakhir
+--    Format ticket_number: LPAD(id,4,'0')/JOR-ADKOR/BULAN/TAHUN
 -- =============================================
 INSERT INTO public.complaints (
   id,
@@ -73,10 +74,14 @@ INSERT INTO public.complaints (
 SELECT
   gen_random_uuid(),
 
-  -- Ticket number: SEED-YYYY-NNNN
-  'SEED-' || EXTRACT(YEAR FROM report_date)::text || '-' || LPAD(s::text, 4, '0'),
+  -- ticket_number: 0001/JOR-ADKOR/BULAN/TAHUN
+  LPAD(s::text, 4, '0') || '/JOR-ADKOR/' ||
+  (ARRAY['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGS','SEP','OKT','NOV','DES'])[
+    EXTRACT(MONTH FROM report_date)::integer
+  ] || '/' ||
+  EXTRACT(YEAR FROM report_date)::text,
 
-  -- Complaint code: 5-digit zero-padded
+  -- complaint_code: 5-digit unik (kombinasi s agar tidak bentrok)
   LPAD(((s * 7 + 13) % 100000)::text, 5, '0'),
 
   -- NPK (cycle through 25 NPK 6-digit)
@@ -132,7 +137,7 @@ SELECT
     ELSE 'Catatan admin: sedang ditindaklanjuti oleh teknisi.'
   END,
 
-  -- reported_at: spread over last 12 months
+  -- reported_at: distribusi merata ke 12 bulan terakhir
   report_date,
 
   -- processed_at: 1-3 days after reported_at (only if not pending)
@@ -152,9 +157,15 @@ SELECT
   -- created_at = reported_at
   report_date
 
-FROM generate_series(1, 220) AS s,
+FROM generate_series(1, 300) AS s,
 LATERAL (
-  SELECT (NOW() - (random() * interval '365 days'))::timestamptz AS report_date
+  -- Distribusi merata: s % 12 menentukan bulan ke belakang (0-11),
+  -- ditambah variasi hari (1-28) agar tidak semua di tanggal sama
+  SELECT (
+    date_trunc('month', NOW()) - ((s % 12) || ' months')::interval
+    + (((s * 13 + 7) % 28) || ' days')::interval
+    + (((s * 11 + 5) % 24) || ' hours')::interval
+  )::timestamptz AS report_date
 ) AS rd
 ON CONFLICT (ticket_number) DO NOTHING;
 

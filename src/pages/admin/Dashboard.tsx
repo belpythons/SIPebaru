@@ -23,6 +23,7 @@ import type { Complaint } from "@/lib/types";
 
 
 const Dashboard = () => {
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -39,27 +40,29 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch complaints
-      const { data: complaints } = await supabase
+      // Fetch complaints (single source of truth)
+      const { data: fetchedComplaints } = await supabase
         .from("complaints")
         .select("*")
         .is("deleted_at", null)
         .order("reported_at", { ascending: false });
 
-      if (complaints) {
-        const pending = complaints.filter((c) => c.status === "pending").length;
-        const processing = complaints.filter((c) => c.status === "processing").length;
-        const completed = complaints.filter((c) => c.status === "completed").length;
+      if (fetchedComplaints) {
+        setComplaints(fetchedComplaints);
+
+        const pending = fetchedComplaints.filter((c) => c.status === "pending").length;
+        const processing = fetchedComplaints.filter((c) => c.status === "processing").length;
+        const completed = fetchedComplaints.filter((c) => c.status === "completed").length;
 
         setStats({
-          total: complaints.length,
+          total: fetchedComplaints.length,
           pending,
           processing,
           completed,
           adminCount: 0,
         });
 
-        setRecentComplaints(complaints.slice(0, 5));
+        setRecentComplaints(fetchedComplaints.slice(0, 5));
       }
 
       // Fetch admin count
@@ -121,14 +124,14 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Charts */}
+        {/* Charts — pass data from parent */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <ComplaintTrendsChart />
-          <ComplaintBarChart />
+          <ComplaintTrendsChart data={complaints} />
+          <ComplaintBarChart data={complaints} />
         </div>
 
-        {/* Monthly Statistics Table */}
-        <MonthlyStatsTable />
+        {/* Monthly Statistics Table — pass data from parent */}
+        <MonthlyStatsTable data={complaints} />
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
           {/* Recent Reports */}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -7,8 +7,11 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
+import type { Complaint } from "@/lib/types";
+
+interface Props {
+  data: Complaint[];
+}
 
 interface ChartData {
   department: string;
@@ -32,61 +35,28 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const ComplaintBarChart = () => {
-  const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+const ComplaintBarChart = ({ data }: Props) => {
+  const chartData = useMemo<ChartData[]>(() => {
+    const departmentMap = new Map<string, ChartData>();
 
-  useEffect(() => {
-    fetchChartData();
-  }, []);
-
-  const fetchChartData = async () => {
-    setIsLoading(true);
-    try {
-      const { data: complaints } = await supabase
-        .from("complaints")
-        .select("department, status");
-
-      if (complaints) {
-        // Group by department
-        const departmentMap = new Map<string, ChartData>();
-
-        complaints.forEach((complaint) => {
-          const dept = complaint.department;
-          if (!departmentMap.has(dept)) {
-            departmentMap.set(dept, {
-              department: dept,
-              pending: 0,
-              processing: 0,
-              completed: 0,
-            });
-          }
-
-          const data = departmentMap.get(dept)!;
-          if (complaint.status === "pending") {
-            data.pending++;
-          } else if (complaint.status === "processing") {
-            data.processing++;
-          } else if (complaint.status === "completed") {
-            data.completed++;
-          }
-        });
-
-        // Convert to array and sort by total complaints
-        const data = Array.from(departmentMap.values()).sort(
-          (a, b) =>
-            b.pending + b.processing + b.completed -
-            (a.pending + a.processing + a.completed)
-        );
-
-        setChartData(data);
+    data.forEach((complaint) => {
+      const dept = complaint.department;
+      if (!departmentMap.has(dept)) {
+        departmentMap.set(dept, { department: dept, pending: 0, processing: 0, completed: 0 });
       }
-    } catch (error) {
-      console.error("Error fetching chart data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+      const entry = departmentMap.get(dept)!;
+      if (complaint.status === "pending") entry.pending++;
+      else if (complaint.status === "processing") entry.processing++;
+      else if (complaint.status === "completed") entry.completed++;
+    });
+
+    return Array.from(departmentMap.values()).sort(
+      (a, b) =>
+        b.pending + b.processing + b.completed -
+        (a.pending + a.processing + a.completed)
+    );
+  }, [data]);
 
   return (
     <Card className="shadow-card">
@@ -94,9 +64,7 @@ const ComplaintBarChart = () => {
         <CardTitle className="text-base sm:text-lg">Pengaduan per Unit Kerja</CardTitle>
       </CardHeader>
       <CardContent className="px-2 sm:px-6">
-        {isLoading ? (
-          <Skeleton className="h-[250px] sm:h-[300px] w-full" />
-        ) : chartData.length === 0 ? (
+        {chartData.length === 0 ? (
           <div className="flex items-center justify-center h-[250px] sm:h-[300px] text-muted-foreground">
             Tidak ada data untuk ditampilkan
           </div>
@@ -147,7 +115,7 @@ const ComplaintBarChart = () => {
           </ChartContainer>
         )}
         {/* Legend */}
-        {!isLoading && chartData.length > 0 && (
+        {chartData.length > 0 && (
           <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mt-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-destructive" />

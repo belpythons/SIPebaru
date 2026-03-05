@@ -181,7 +181,7 @@ const Home = () => {
             <div className="bg-card rounded-xl sm:rounded-2xl shadow-lg border p-4 sm:p-6 space-y-4">
               <h2 className="text-base sm:text-lg font-semibold text-foreground">Cek Status Pengaduan Anda</h2>
               <div className="flex flex-col sm:flex-row gap-2">
-                <Input placeholder="Masukkan Kode Pengaduan (5 karakter)" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleKeyDown} className="text-center text-base sm:text-lg h-11 sm:h-12" maxLength={5} />
+                <Input placeholder="Masukkan Kode (5 digit) atau No. Tiket" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={handleKeyDown} className="text-center text-base sm:text-lg h-11 sm:h-12" />
                 <Button onClick={handleSearch} disabled={isSearching} size="lg" className="gap-2 px-6 h-11 sm:h-12 w-full sm:w-auto">
                   {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   Cari

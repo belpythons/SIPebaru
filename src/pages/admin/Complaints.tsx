@@ -130,7 +130,7 @@ const Complaints = () => {
           <span className="font-bold text-primary text-lg tracking-wide">{complaint.complaint_code || "-"}</span>
           <p className="text-xs text-muted-foreground">{complaint.ticket_number}</p>
         </div>
-        <Badge variant={statusVariants[complaint.status]}>{statusLabels[complaint.status]}</Badge>
+        <Badge variant={STATUS_VARIANTS[complaint.status]}>{STATUS_LABELS[complaint.status]}</Badge>
       </div>
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div><p className="text-muted-foreground">NPK</p><p className="font-medium truncate">{complaint.npk || "-"}</p></div>

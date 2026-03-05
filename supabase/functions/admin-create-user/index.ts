@@ -15,7 +15,6 @@ interface UserPayload {
     email: string;
     password: string;
     username: string;
-    role: "admin" | "viewer";
     npk?: string;
 }
 
@@ -46,9 +45,6 @@ function validateUser(user: UserPayload, index: number): string | null {
     }
     if (user.password.length > 128) {
         return `Baris ${index + 1}: Password harus kurang dari 128 karakter`;
-    }
-    if (!["admin", "viewer"].includes(user.role)) {
-        return `Baris ${index + 1}: Role harus 'admin' atau 'viewer'`;
     }
     return null;
 }
@@ -97,7 +93,7 @@ Deno.serve(async (req) => {
         const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
         const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-        // Client pengguna untuk verifikasi caller adalah super_admin
+        // Client pengguna untuk verifikasi caller sudah login
         const userClient = createClient(supabaseUrl, supabaseAnonKey, {
             global: { headers: { Authorization: authHeader } },
         });
@@ -107,21 +103,6 @@ Deno.serve(async (req) => {
             return new Response(
                 JSON.stringify({ error: "Autentikasi diperlukan" }),
                 { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
-        }
-
-        // Verifikasi caller punya role super_admin
-        const { data: roleData, error: roleError } = await userClient
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", user.id)
-            .eq("role", "super_admin")
-            .maybeSingle();
-
-        if (roleError || !roleData) {
-            return new Response(
-                JSON.stringify({ error: "Hanya Super Admin yang bisa membuat akun" }),
-                { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
         }
 
@@ -205,11 +186,7 @@ Deno.serve(async (req) => {
                     email: userData.email.trim(),
                 });
 
-                // Assign role
-                await adminClient.from("user_roles").insert({
-                    user_id: newUserData.user.id,
-                    role: userData.role,
-                });
+
 
                 successCount++;
                 results.push({

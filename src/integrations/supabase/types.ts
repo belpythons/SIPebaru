@@ -304,24 +304,7 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
+
     }
     Views: {
       sipebaru_users_safe: {
@@ -397,20 +380,7 @@ export type Database = {
         }[]
       }
       generate_kop_surat_number: { Args: Record<string, never>; Returns: string }
-      has_any_role: {
-        Args: {
-          _roles: Database["public"]["Enums"]["app_role"][]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+
       hash_password: { Args: { password: string }; Returns: string }
       register_sipebaru_user: {
         Args: {
@@ -436,7 +406,6 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "super_admin" | "viewer"
       complaint_status: "pending" | "processing" | "completed"
       user_status: "pending" | "active" | "rejected"
     }
@@ -566,7 +535,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "super_admin", "viewer"],
       complaint_status: ["pending", "processing", "completed"],
       user_status: ["pending", "active", "rejected"],
     },

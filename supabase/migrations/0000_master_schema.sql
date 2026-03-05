@@ -12,7 +12,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 1. ENUM TYPES
 -- =============================================
 CREATE TYPE public.complaint_status AS ENUM ('pending', 'processing', 'completed');
-CREATE TYPE public.app_role AS ENUM ('admin', 'super_admin', 'viewer');
 
 -- =============================================
 -- 2. TABEL: complaints
@@ -55,17 +54,7 @@ CREATE TABLE public.profiles (
 );
 
 -- =============================================
--- 4. TABEL: user_roles
--- =============================================
-CREATE TABLE public.user_roles (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  role app_role NOT NULL,
-  UNIQUE (user_id, role)
-);
-
--- =============================================
--- 5. TABEL: departments
+-- 4. TABEL: departments
 -- =============================================
 CREATE TABLE public.departments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -76,7 +65,7 @@ CREATE TABLE public.departments (
 );
 
 -- =============================================
--- 6. TABEL: members_batch
+-- 5. TABEL: members_batch
 -- =============================================
 CREATE TABLE public.members_batch (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -89,7 +78,7 @@ CREATE TABLE public.members_batch (
 );
 
 -- =============================================
--- 7. TABEL: complaint_history
+-- 6. TABEL: complaint_history
 -- =============================================
 CREATE TABLE public.complaint_history (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -103,7 +92,7 @@ CREATE TABLE public.complaint_history (
 );
 
 -- =============================================
--- 8. TABEL: activity_logs
+-- 7. TABEL: activity_logs
 -- =============================================
 CREATE TABLE public.activity_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -116,7 +105,7 @@ CREATE TABLE public.activity_logs (
 );
 
 -- =============================================
--- 9. TABEL: kop_surat_sequence
+-- 8. TABEL: kop_surat_sequence
 -- =============================================
 CREATE TABLE public.kop_surat_sequence (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -126,11 +115,10 @@ CREATE TABLE public.kop_surat_sequence (
 );
 
 -- =============================================
--- 10. ENABLE ROW LEVEL SECURITY
+-- 9. ENABLE ROW LEVEL SECURITY
 -- =============================================
 ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.members_batch ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.complaint_history ENABLE ROW LEVEL SECURITY;
@@ -138,7 +126,7 @@ ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.kop_surat_sequence ENABLE ROW LEVEL SECURITY;
 
 -- =============================================
--- 11. INDEKS
+-- 10. INDEKS
 -- =============================================
 CREATE INDEX idx_complaints_status ON public.complaints(status);
 CREATE INDEX idx_complaints_department ON public.complaints(department);
@@ -155,7 +143,7 @@ CREATE INDEX idx_departments_deleted_at ON public.departments(deleted_at);
 CREATE INDEX idx_profiles_deleted_at ON public.profiles(deleted_at);
 
 -- =============================================
--- 12. FUNGSI UTILITAS
+-- 11. FUNGSI UTILITAS
 -- =============================================
 
 -- Trigger helper: auto-update updated_at
@@ -171,36 +159,8 @@ BEGIN
 END;
 $$;
 
--- Cek role tunggal
-CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, auth, extensions
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
-  )
-$$;
-
--- Cek multi-role (digunakan RLS)
-CREATE OR REPLACE FUNCTION public.has_any_role(_user_id uuid, _roles app_role[])
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public, auth, extensions
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = ANY(_roles)
-  )
-$$;
-
 -- =============================================
--- 13. FUNGSI BISNIS
+-- 12. FUNGSI BISNIS
 -- =============================================
 
 -- Generate nomor tiket: 0001/JOR-ADKOR/FEB/2026
@@ -365,7 +325,7 @@ BEGIN
   PERFORM pg_advisory_xact_lock(hashtext('setup_first_admin'));
 
   SELECT COUNT(*) INTO admin_count
-  FROM public.user_roles WHERE role IN ('admin', 'super_admin');
+  FROM public.profiles WHERE deleted_at IS NULL;
 
   IF admin_count > 0 THEN
     RAISE EXCEPTION 'Admin sudah ada. Gunakan halaman login.';
@@ -381,20 +341,12 @@ BEGIN
         email = EXCLUDED.email,
         updated_at = now();
 
-  INSERT INTO public.user_roles (user_id, role)
-  VALUES (_user_id, 'admin')
-  ON CONFLICT (user_id, role) DO NOTHING;
-
-  INSERT INTO public.user_roles (user_id, role)
-  VALUES (_user_id, 'super_admin')
-  ON CONFLICT (user_id, role) DO NOTHING;
-
   RETURN true;
 END;
 $$;
 
 -- =============================================
--- 14. TRIGGER: Log perubahan status pengaduan
+-- 13. TRIGGER: Log perubahan status pengaduan
 -- =============================================
 CREATE OR REPLACE FUNCTION public.log_complaint_status_change()
 RETURNS trigger
@@ -429,7 +381,7 @@ END;
 $$;
 
 -- =============================================
--- 15. TRIGGERS
+-- 14. TRIGGERS
 -- =============================================
 CREATE TRIGGER update_complaints_updated_at
   BEFORE UPDATE ON public.complaints
@@ -452,11 +404,10 @@ CREATE TRIGGER trigger_log_complaint_status_change
   FOR EACH ROW EXECUTE FUNCTION public.log_complaint_status_change();
 
 -- =============================================================================
--- 16. RLS POLICIES (Simplified)
+-- 15. RLS POLICIES (Simplified — No RBAC)
 -- =============================================================================
 -- Prinsip:
---   - Admin & Super Admin digabung jadi satu policy menggunakan has_any_role()
---   - Viewer hanya bisa SELECT
+--   - Semua user yang sudah login (authenticated) = Admin, punya akses penuh
 --   - Publik (anon) hanya bisa INSERT pengaduan & SELECT untuk cek status
 -- =============================================================================
 
@@ -479,62 +430,39 @@ CREATE POLICY "Publik bisa lihat pengaduan"
   ON public.complaints FOR SELECT
   USING (true);
 
-CREATE POLICY "Admin/SA bisa update pengaduan"
+CREATE POLICY "Admin bisa update pengaduan"
   ON public.complaints FOR UPDATE
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]))
-  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Admin/SA bisa hapus pengaduan"
+CREATE POLICY "Admin bisa hapus pengaduan"
   ON public.complaints FOR DELETE
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  USING (auth.uid() IS NOT NULL);
 
 -- ---- profiles ----
 
-CREATE POLICY "SA/Admin/Viewer bisa lihat profiles"
+CREATE POLICY "Admin bisa lihat profiles"
   ON public.profiles FOR SELECT
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin','viewer']::app_role[]));
+  USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "SA bisa insert profiles"
+CREATE POLICY "Admin bisa insert profiles"
   ON public.profiles FOR INSERT
   TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
+  WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "SA/own bisa update profiles"
+CREATE POLICY "Admin bisa update profiles"
   ON public.profiles FOR UPDATE
   TO authenticated
-  USING (
-    public.has_role(auth.uid(), 'super_admin')
-    OR user_id = auth.uid()
-  )
-  WITH CHECK (
-    public.has_role(auth.uid(), 'super_admin')
-    OR user_id = auth.uid()
-  );
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "SA bisa delete profiles"
+CREATE POLICY "Admin bisa delete profiles"
   ON public.profiles FOR DELETE
   TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'));
-
--- ---- user_roles ----
-
-CREATE POLICY "SA/Admin/Viewer bisa lihat roles"
-  ON public.user_roles FOR SELECT
-  TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin','viewer']::app_role[]));
-
-CREATE POLICY "SA bisa insert roles"
-  ON public.user_roles FOR INSERT
-  TO authenticated
-  WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
-
-CREATE POLICY "SA bisa delete roles"
-  ON public.user_roles FOR DELETE
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'));
+  USING (auth.uid() IS NOT NULL);
 
 -- ---- departments ----
 
@@ -542,20 +470,20 @@ CREATE POLICY "Publik bisa lihat unit kerja"
   ON public.departments FOR SELECT
   USING (true);
 
-CREATE POLICY "Admin/SA bisa insert unit kerja"
+CREATE POLICY "Admin bisa insert unit kerja"
   ON public.departments FOR INSERT
   TO authenticated
-  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Admin/SA bisa update unit kerja"
+CREATE POLICY "Admin bisa update unit kerja"
   ON public.departments FOR UPDATE
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Admin/SA bisa delete unit kerja"
+CREATE POLICY "Admin bisa delete unit kerja"
   ON public.departments FOR DELETE
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  USING (auth.uid() IS NOT NULL);
 
 -- ---- members_batch ----
 
@@ -563,35 +491,35 @@ CREATE POLICY "Publik bisa validasi nomor induk"
   ON public.members_batch FOR SELECT
   USING (deleted_at IS NULL);
 
-CREATE POLICY "SA bisa kelola members batch"
+CREATE POLICY "Admin bisa kelola members batch"
   ON public.members_batch FOR ALL
   TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'super_admin'));
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- ---- complaint_history ----
 
-CREATE POLICY "Authenticated bisa lihat riwayat"
+CREATE POLICY "Admin bisa lihat riwayat"
   ON public.complaint_history FOR SELECT
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin','viewer']::app_role[]));
+  USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Admin/SA bisa insert riwayat"
+CREATE POLICY "Admin bisa insert riwayat"
   ON public.complaint_history FOR INSERT
   TO authenticated
-  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- ---- activity_logs ----
 
-CREATE POLICY "SA bisa lihat log aktivitas"
+CREATE POLICY "Admin bisa lihat log aktivitas"
   ON public.activity_logs FOR SELECT
   TO authenticated
-  USING (public.has_role(auth.uid(), 'super_admin'));
+  USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Admin/SA bisa insert log"
+CREATE POLICY "Admin bisa insert log"
   ON public.activity_logs FOR INSERT
   TO authenticated
-  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Anon bisa insert log badge"
   ON public.activity_logs FOR INSERT
@@ -599,11 +527,11 @@ CREATE POLICY "Anon bisa insert log badge"
 
 -- ---- kop_surat_sequence ----
 
-CREATE POLICY "Admin/SA bisa akses kop surat"
+CREATE POLICY "Admin bisa akses kop surat"
   ON public.kop_surat_sequence FOR ALL
   TO authenticated
-  USING (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]))
-  WITH CHECK (public.has_any_role(auth.uid(), ARRAY['admin','super_admin']::app_role[]));
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- =============================================================================
 -- SELESAI - Master Schema SIPebaru

@@ -108,24 +108,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if the user is an admin or super_admin
-    const { data: roleData, error: roleError } = await userClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .in("role", ["admin", "super_admin"])
-      .limit(1)
-      .maybeSingle();
-
-    if (roleError || !roleData) {
-      return new Response(
-        JSON.stringify({ error: "Insufficient permissions" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // Parse the request body
-    let body: { email?: string; password?: string; username?: string; npk?: string; role?: string };
+    let body: { email?: string; password?: string; username?: string; npk?: string };
     try {
       body = await req.json();
     } catch {
@@ -135,8 +119,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, username, npk, role: assignRole } = body;
-    const targetRole = assignRole === "viewer" ? "viewer" : "admin";
+    const { email, password, username, npk } = body;
 
     // Comprehensive input validation
     const emailValidation = validateEmail(email || "");
@@ -203,18 +186,7 @@ Deno.serve(async (req) => {
       // Don't fail the request, profile can be created later
     }
 
-    // Add user role
-    const { error: roleInsertError } = await adminClient
-      .from("user_roles")
-      .insert({
-        user_id: newUserData.user.id,
-        role: targetRole,
-      });
 
-    if (roleInsertError) {
-      console.error("Role creation error:", roleInsertError);
-      // Don't fail the request, but log the error
-    }
 
     return new Response(
       JSON.stringify({

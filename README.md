@@ -1,6 +1,6 @@
 # 🏢 SIPebaru — Sistem Informasi Pengaduan Barang Rusak
 
-Sistem manajemen pengaduan inventaris *enterprise-ready* dengan **Role-Based Access Control (RBAC)** ketat, validasi Portal Badge, dan pelaporan otomatis.
+Sistem manajemen pengaduan inventaris *enterprise-ready* dengan validasi Portal Badge, autentikasi Supabase, dan pelaporan otomatis.
 
 ![React](https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
@@ -13,14 +13,18 @@ Sistem manajemen pengaduan inventaris *enterprise-ready* dengan **Role-Based Acc
 ## ✨ Fitur Utama
 
 ### 🔐 Keamanan & Akses
-- **Single Point of Entry (SPOE)** — Halaman `/setup` untuk inisialisasi Super Admin pertama. Setelah digunakan, rute otomatis terkunci permanen dan tidak dapat diakses lagi.
-- **Strict RBAC** di level database (RLS + RPC) dan frontend:
 
-  | Role | Hak Akses |
-  |------|-----------|
-  | **Super Admin** | Full access: kelola pengaduan, kelola akun (CRUD), import data, lihat log aktivitas |
-  | **Admin** | Kelola pengaduan, edit profil & password sendiri |
-  | **Viewer** | Read-only dashboard, export laporan |
+Sistem menggunakan model akses sederhana dengan dua jenis pengguna:
+
+| Aktor | Deskripsi |
+|-------|-----------|
+| **Admin** | Pengguna yang login via email & password. Memiliki akses penuh ke panel dashboard: kelola pengaduan, kelola akun, import data, lihat log aktivitas, export laporan. |
+| **User (Publik)** | Pengguna anonim tanpa login. Cukup memasukkan Nomor Induk (NPK) melalui Portal Badge untuk submit pengaduan dan melacak status tiket. |
+
+- **Single Point of Entry (SPOE)** — Halaman `/setup` untuk inisialisasi Admin pertama. Setelah digunakan, rute otomatis terkunci permanen dan tidak dapat diakses lagi.
+- **Row Level Security (RLS)** di level database memastikan:
+  - Semua operasi write (INSERT/UPDATE/DELETE) pada data admin hanya bisa dilakukan oleh user yang sudah login (`auth.uid() IS NOT NULL`).
+  - Data publik (submit pengaduan, lihat status, validasi NPK) tetap terbuka tanpa login.
 
 ### 📊 Operasional
 - **Portal Badge** — Validasi Nomor Induk (NPK 6-digit) karyawan sebelum submit pengaduan.
@@ -120,13 +124,18 @@ supabase db reset --linked
 
 ### 5. Deploy Edge Functions
 
-Setelah mengatur `config.toml`, deploy ketiga fungsi manajemen akun ke proyek Supabase Anda:
+Deploy ketiga fungsi manajemen akun ke proyek Supabase Anda:
 
 ```bash
 supabase functions deploy create-admin
 supabase functions deploy admin-create-user
 supabase functions deploy update-admin-password
 ```
+
+**Catatan tentang Edge Functions:**
+- `create-admin` — Membuat satu akun admin baru. Menerima payload `{ email, password, username, npk }`. Memvalidasi bahwa pemanggil memiliki sesi aktif (authenticated).
+- `admin-create-user` — Membuat banyak akun admin secara bulk. Menerima payload `{ users: [{ email, password, username, npk }] }`. Memvalidasi bahwa pemanggil memiliki sesi aktif.
+- `update-admin-password` — Mengubah password admin lain. Menerima payload `{ target_user_id, password }`. Memvalidasi bahwa pemanggil memiliki sesi aktif.
 
 ### 6. Setup Storage Bucket (Manual)
 
@@ -168,9 +177,10 @@ Setelah development server berjalan:
 
 1. Buka `http://localhost:5173/setup` di browser.
 2. Isi form: **Username**, **NPK** (opsional), **Email**, dan **Password**.
-3. Klik **"Buat Akun Admin"** — akun Super Admin pertama akan otomatis dibuat dan disimpan.
+3. Klik **"Buat Akun Admin"** — akun Admin pertama akan otomatis dibuat (`auth.users` + `profiles`).
 4. **Rute `/setup` otomatis terkunci** setelah proses ini. Akses selanjutnya akan langsung diarahkan ke `/login`.
 5. Login di `http://localhost:5173/login` dengan kredensial yang baru saja dibuat.
+6. Semua menu admin langsung tersedia setelah login berhasil.
 
 ---
 

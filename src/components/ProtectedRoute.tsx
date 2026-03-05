@@ -14,21 +14,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        // Verifikasi apakah user punya role admin/super_admin/viewer
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .in("role", ["admin", "super_admin", "viewer"])
-          .limit(1)
-          .maybeSingle();
-
-        setIsAuthenticated(!!roleData);
-      } else {
-        setIsAuthenticated(false);
-      }
-
+      // Cukup cek apakah ada session user yang valid
+      setIsAuthenticated(!!session?.user);
       setIsLoading(false);
     };
 

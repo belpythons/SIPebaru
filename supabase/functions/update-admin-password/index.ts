@@ -29,14 +29,14 @@ function validatePassword(password: string): { valid: boolean; error?: string } 
 // Safe error mapping to prevent information leakage
 function mapErrorToSafeMessage(error: Error | { message?: string }): string {
   const message = error?.message?.toLowerCase() || "";
-  
+
   if (message.includes("user not found") || message.includes("not found")) {
     return "User not found";
   }
   if (message.includes("password")) {
     return "Password does not meet requirements";
   }
-  
+
   // Return generic message for all other errors
   return "Failed to update password";
 }
@@ -81,20 +81,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if the user is an admin
-    const { data: roleData, error: roleError } = await userClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
 
-    if (roleError || !roleData) {
-      return new Response(
-        JSON.stringify({ error: "Insufficient permissions" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     // Parse the request body
     let body: { target_user_id?: string; password?: string };
@@ -144,8 +131,8 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: "Password updated successfully"
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

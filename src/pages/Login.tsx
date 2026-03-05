@@ -35,20 +35,6 @@ const Login = () => {
 
       if (error) throw error;
 
-      // Verifikasi apakah user punya role admin/super_admin/viewer
-      const { data: roleData, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .in("role", ["admin", "super_admin", "viewer"])
-        .limit(1)
-        .maybeSingle();
-
-      if (roleError || !roleData) {
-        await supabase.auth.signOut();
-        throw new Error("Anda tidak memiliki akses ke panel ini");
-      }
-
       toast({
         title: "Login berhasil",
         description: "Selamat datang di panel admin SIPebaru",

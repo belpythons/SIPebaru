@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Loader2, FileDown, Search, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import StatCard from "@/components/StatCard";
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Clock, Loader2 as ProcessingIcon, CheckCircle } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { startOfYear, endOfDay, parseISO, isWithinInterval, startOfDay } from "date-fns";
 import { STATUS_LABELS, STATUS_VARIANTS, ITEMS_PER_PAGE } from "@/lib/constants";
 import { formatDate, formatDateFull } from "@/lib/utils";
 import type { Complaint } from "@/lib/types";
@@ -24,34 +25,66 @@ const Reports = () => {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [filteredComplaints, setFilteredComplaints] = useState<Complaint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFiltering, setIsFiltering] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState({
-    from: new Date(new Date().setDate(1)).toISOString().split("T")[0],
+    from: startOfYear(new Date()).toISOString().split("T")[0],
     to: new Date().toISOString().split("T")[0],
   });
   const [stats, setStats] = useState({ pending: 0, processing: 0, completed: 0 });
 
   useEffect(() => { fetchComplaints(); }, []);
 
+  const applyFilter = useCallback((data: Complaint[], from: string, to: string) => {
+    setIsFiltering(true);
+
+    try {
+      const fromDate = startOfDay(parseISO(from));
+      const toDate = endOfDay(parseISO(to));
+
+      const filtered = data.filter((c) => {
+        const d = parseISO(c.reported_at);
+        return isWithinInterval(d, { start: fromDate, end: toDate });
+      });
+
+      setFilteredComplaints(filtered);
+      setCurrentPage(1);
+      setStats({
+        pending: filtered.filter((c) => c.status === "pending").length,
+        processing: filtered.filter((c) => c.status === "processing").length,
+        completed: filtered.filter((c) => c.status === "completed").length,
+      });
+
+      // If no data in the selected range but data exists overall, show a warning
+      if (filtered.length === 0 && data.length > 0) {
+        toast({
+          title: "Tidak ada data",
+          description: `Tidak ada pengaduan dalam rentang ${formatDateFull(from)} — ${formatDateFull(to)}. Coba perluas rentang tanggal.`,
+        });
+      }
+    } finally {
+      // Small delay so the skeleton flash feels intentional, not jarring
+      setTimeout(() => setIsFiltering(false), 150);
+    }
+  }, [toast]);
+
   const fetchComplaints = async () => {
     try {
-      const { data } = await supabase.from("complaints").select("*").order("reported_at", { ascending: false });
-      if (data) { setComplaints(data); filterByDate(data, dateRange.from, dateRange.to); }
-    } catch (error) { console.error("Error fetching complaints:", error); } finally { setIsLoading(false); }
-  };
+      const { data } = await supabase
+        .from("complaints")
+        .select("*")
+        .is("deleted_at", null)
+        .order("reported_at", { ascending: false });
 
-  const filterByDate = (data: Complaint[], from: string, to: string) => {
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
-    toDate.setHours(23, 59, 59, 999);
-    const filtered = data.filter((c) => { const d = new Date(c.reported_at); return d >= fromDate && d <= toDate; });
-    setFilteredComplaints(filtered);
-    setCurrentPage(1);
-    setStats({
-      pending: filtered.filter((c) => c.status === "pending").length,
-      processing: filtered.filter((c) => c.status === "processing").length,
-      completed: filtered.filter((c) => c.status === "completed").length,
-    });
+      if (data) {
+        setComplaints(data);
+        applyFilter(data, dateRange.from, dateRange.to);
+      }
+    } catch (error) {
+      console.error("Error fetching complaints:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const totalPages = Math.ceil(filteredComplaints.length / ITEMS_PER_PAGE);
@@ -70,7 +103,7 @@ const Reports = () => {
     return pages;
   };
 
-  const handleFilter = () => { filterByDate(complaints, dateRange.from, dateRange.to); };
+  const handleFilter = () => { applyFilter(complaints, dateRange.from, dateRange.to); };
 
 
 
@@ -83,7 +116,7 @@ const Reports = () => {
     const headers = ["No", "Kode", "No. Pengaduan", "Tanggal Lapor", "Tanggal Selesai", "NPK", "Nama Pemohon", "Unit Kerja", "Nama Item", "Jumlah", "Keterangan", "Status"];
 
     const rows = filteredComplaints.map((c, index) => [
-      index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
+      index + 1, c.complaint_code || "-", c.ticket_number, formatDate(c.reported_at),
       c.completed_at ? formatDate(c.completed_at) : "-", c.npk || "-",
       c.reporter_name, c.department, c.item_name, c.quantity, c.description || "-", STATUS_LABELS[c.status],
     ]);
@@ -148,7 +181,7 @@ const Reports = () => {
 
       // Tabel
       const tableData = filteredComplaints.map((c, index) => [
-        index + 1, c.complaint_code, c.ticket_number, formatDate(c.reported_at),
+        index + 1, c.complaint_code || "-", c.ticket_number, formatDate(c.reported_at),
         c.completed_at ? formatDate(c.completed_at) : "-", c.npk || "-",
         c.reporter_name, c.department, c.item_name, c.quantity, STATUS_LABELS[c.status],
       ]);
@@ -267,9 +300,12 @@ const Reports = () => {
               <div className="space-y-2"><Label htmlFor="from">Dari Tanggal</Label><Input id="from" type="date" value={dateRange.from} onChange={(e) => setDateRange((prev) => ({ ...prev, from: e.target.value }))} /></div>
               <div className="space-y-2"><Label htmlFor="to">Sampai Tanggal</Label><Input id="to" type="date" value={dateRange.to} onChange={(e) => setDateRange((prev) => ({ ...prev, to: e.target.value }))} /></div>
               <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-wrap gap-2">
-                <Button onClick={handleFilter} className="gap-2 flex-1 sm:flex-none"><Search className="h-4 w-4" /><span className="hidden sm:inline">Tampilkan</span> Laporan</Button>
-                <Button variant="outline" onClick={downloadCSV} className="gap-2 flex-1 sm:flex-none"><FileDown className="h-4 w-4" /><span className="hidden sm:inline">Download</span> Excel</Button>
-                <Button variant="outline" onClick={downloadPDF} className="gap-2 flex-1 sm:flex-none"><FileText className="h-4 w-4" /><span className="hidden sm:inline">Download</span> PDF</Button>
+                <Button onClick={handleFilter} disabled={isFiltering} className="gap-2 flex-1 sm:flex-none">
+                  {isFiltering ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  <span className="hidden sm:inline">Tampilkan</span> Laporan
+                </Button>
+                <Button variant="outline" onClick={downloadCSV} disabled={filteredComplaints.length === 0} className="gap-2 flex-1 sm:flex-none"><FileDown className="h-4 w-4" /><span className="hidden sm:inline">Download</span> Excel</Button>
+                <Button variant="outline" onClick={downloadPDF} disabled={filteredComplaints.length === 0} className="gap-2 flex-1 sm:flex-none"><FileText className="h-4 w-4" /><span className="hidden sm:inline">Download</span> PDF</Button>
               </div>
             </div>
           </CardContent>
@@ -284,83 +320,91 @@ const Reports = () => {
         <Card className="shadow-card">
           <CardHeader><CardTitle className="text-lg">Data Laporan ({filteredComplaints.length} pengaduan)</CardTitle></CardHeader>
           <CardContent>
-            <div className="hidden lg:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">No</TableHead>
-                    <TableHead>Kode</TableHead>
-                    <TableHead>No. Pengaduan</TableHead>
-                    <TableHead>Tanggal Lapor</TableHead>
-                    <TableHead>Tanggal Selesai</TableHead>
-                    <TableHead>NPK</TableHead>
-                    <TableHead>Nama Pemohon</TableHead>
-                    <TableHead>Unit Kerja</TableHead>
-                    <TableHead>Nama Item</TableHead>
-                    <TableHead className="text-center">Jumlah</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedComplaints.length === 0 ? (
-                    <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Tidak ada data dalam rentang tanggal ini</TableCell></TableRow>
-                  ) : paginatedComplaints.map((complaint, index) => (
-                    <TableRow key={complaint.id}>
-                      <TableCell className="text-center">{startIndex + index + 1}</TableCell>
-                      <TableCell className="font-mono text-sm">{complaint.complaint_code}</TableCell>
-                      <TableCell className="font-medium">{complaint.ticket_number}</TableCell>
-                      <TableCell>{formatDate(complaint.reported_at)}</TableCell>
-                      <TableCell>{complaint.completed_at ? formatDate(complaint.completed_at) : "-"}</TableCell>
-                      <TableCell>{complaint.npk || "-"}</TableCell>
-                      <TableCell>{complaint.reporter_name}</TableCell>
-                      <TableCell>{complaint.department}</TableCell>
-                      <TableCell>{complaint.item_name}</TableCell>
-                      <TableCell className="text-center">{complaint.quantity}</TableCell>
-                      <TableCell><Badge variant={STATUS_VARIANTS[complaint.status]}>{STATUS_LABELS[complaint.status]}</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="lg:hidden space-y-3">
-              {paginatedComplaints.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground">Tidak ada data dalam rentang tanggal ini</p>
-              ) : paginatedComplaints.map((complaint, index) => (
-                <div key={complaint.id} className="p-4 border rounded-lg space-y-3 bg-card">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">#{startIndex + index + 1}</span>
-                    <Badge variant={STATUS_VARIANTS[complaint.status]}>{STATUS_LABELS[complaint.status]}</Badge>
-                  </div>
-                  <div className="font-semibold text-primary">{complaint.ticket_number}</div>
-                  <div className="text-xs font-mono text-muted-foreground">Kode: {complaint.complaint_code}</div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><p className="text-muted-foreground">Pemohon</p><p className="font-medium truncate">{complaint.reporter_name}</p></div>
-                    <div><p className="text-muted-foreground">NPK</p><p className="font-medium truncate">{complaint.npk || "-"}</p></div>
-                    <div><p className="text-muted-foreground">Unit Kerja</p><p className="font-medium truncate">{complaint.department}</p></div>
-                    <div><p className="text-muted-foreground">Item</p><p className="font-medium truncate">{complaint.item_name}</p></div>
-                    <div><p className="text-muted-foreground">Jumlah</p><p className="font-medium">{complaint.quantity}</p></div>
-                    <div><p className="text-muted-foreground">Tgl Lapor</p><p className="font-medium">{formatDate(complaint.reported_at)}</p></div>
-                    <div><p className="text-muted-foreground">Tgl Selesai</p><p className="font-medium">{complaint.completed_at ? formatDate(complaint.completed_at) : "-"}</p></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
-                <p className="text-sm text-muted-foreground text-center sm:text-left">Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredComplaints.length)} dari {filteredComplaints.length} data</p>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Button variant="outline" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="gap-1 px-2 sm:px-3"><ChevronLeft className="h-4 w-4" /><span className="hidden sm:inline">Sebelumnya</span></Button>
-                  <div className="hidden sm:flex items-center gap-1 mx-2">
-                    {getPageNumbers().map((page, index) => typeof page === "number" ? (
-                      <Button key={index} variant={currentPage === page ? "default" : "outline"} size="sm" onClick={() => goToPage(page)} className="min-w-[2.5rem]">{page}</Button>
-                    ) : <span key={index} className="px-2 text-muted-foreground">{page}</span>)}
-                  </div>
-                  <span className="sm:hidden text-sm text-muted-foreground">{currentPage}/{totalPages}</span>
-                  <Button variant="outline" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="gap-1 px-2 sm:px-3"><span className="hidden sm:inline">Selanjutnya</span><ChevronRight className="h-4 w-4" /></Button>
-                </div>
+            {isFiltering ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
+            ) : (
+              <>
+                <div className="hidden lg:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">No</TableHead>
+                        <TableHead>Kode</TableHead>
+                        <TableHead>No. Pengaduan</TableHead>
+                        <TableHead>Tanggal Lapor</TableHead>
+                        <TableHead>Tanggal Selesai</TableHead>
+                        <TableHead>NPK</TableHead>
+                        <TableHead>Nama Pemohon</TableHead>
+                        <TableHead>Unit Kerja</TableHead>
+                        <TableHead>Nama Item</TableHead>
+                        <TableHead className="text-center">Jumlah</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedComplaints.length === 0 ? (
+                        <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Tidak ada data dalam rentang tanggal ini</TableCell></TableRow>
+                      ) : paginatedComplaints.map((complaint, index) => (
+                        <TableRow key={complaint.id}>
+                          <TableCell className="text-center">{startIndex + index + 1}</TableCell>
+                          <TableCell className="font-mono text-sm">{complaint.complaint_code || "-"}</TableCell>
+                          <TableCell className="font-medium">{complaint.ticket_number}</TableCell>
+                          <TableCell>{formatDate(complaint.reported_at)}</TableCell>
+                          <TableCell>{complaint.completed_at ? formatDate(complaint.completed_at) : "-"}</TableCell>
+                          <TableCell>{complaint.npk || "-"}</TableCell>
+                          <TableCell>{complaint.reporter_name}</TableCell>
+                          <TableCell>{complaint.department}</TableCell>
+                          <TableCell>{complaint.item_name}</TableCell>
+                          <TableCell className="text-center">{complaint.quantity}</TableCell>
+                          <TableCell><Badge variant={STATUS_VARIANTS[complaint.status]}>{STATUS_LABELS[complaint.status]}</Badge></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="lg:hidden space-y-3">
+                  {paginatedComplaints.length === 0 ? (
+                    <p className="text-center py-8 text-muted-foreground">Tidak ada data dalam rentang tanggal ini</p>
+                  ) : paginatedComplaints.map((complaint, index) => (
+                    <div key={complaint.id} className="p-4 border rounded-lg space-y-3 bg-card">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">#{startIndex + index + 1}</span>
+                        <Badge variant={STATUS_VARIANTS[complaint.status]}>{STATUS_LABELS[complaint.status]}</Badge>
+                      </div>
+                      <div className="font-semibold text-primary">{complaint.ticket_number}</div>
+                      <div className="text-xs font-mono text-muted-foreground">Kode: {complaint.complaint_code || "-"}</div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div><p className="text-muted-foreground">Pemohon</p><p className="font-medium truncate">{complaint.reporter_name}</p></div>
+                        <div><p className="text-muted-foreground">NPK</p><p className="font-medium truncate">{complaint.npk || "-"}</p></div>
+                        <div><p className="text-muted-foreground">Unit Kerja</p><p className="font-medium truncate">{complaint.department}</p></div>
+                        <div><p className="text-muted-foreground">Item</p><p className="font-medium truncate">{complaint.item_name}</p></div>
+                        <div><p className="text-muted-foreground">Jumlah</p><p className="font-medium">{complaint.quantity}</p></div>
+                        <div><p className="text-muted-foreground">Tgl Lapor</p><p className="font-medium">{formatDate(complaint.reported_at)}</p></div>
+                        <div><p className="text-muted-foreground">Tgl Selesai</p><p className="font-medium">{complaint.completed_at ? formatDate(complaint.completed_at) : "-"}</p></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
+                    <p className="text-sm text-muted-foreground text-center sm:text-left">Menampilkan {startIndex + 1} - {Math.min(endIndex, filteredComplaints.length)} dari {filteredComplaints.length} data</p>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <Button variant="outline" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="gap-1 px-2 sm:px-3"><ChevronLeft className="h-4 w-4" /><span className="hidden sm:inline">Sebelumnya</span></Button>
+                      <div className="hidden sm:flex items-center gap-1 mx-2">
+                        {getPageNumbers().map((page, index) => typeof page === "number" ? (
+                          <Button key={index} variant={currentPage === page ? "default" : "outline"} size="sm" onClick={() => goToPage(page)} className="min-w-[2.5rem]">{page}</Button>
+                        ) : <span key={index} className="px-2 text-muted-foreground">{page}</span>)}
+                      </div>
+                      <span className="sm:hidden text-sm text-muted-foreground">{currentPage}/{totalPages}</span>
+                      <Button variant="outline" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="gap-1 px-2 sm:px-3"><span className="hidden sm:inline">Selanjutnya</span><ChevronRight className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

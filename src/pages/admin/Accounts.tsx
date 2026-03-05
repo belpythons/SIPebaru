@@ -53,7 +53,6 @@ const Accounts = () => {
     confirmPassword: "",
   });
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     initPage();
@@ -64,39 +63,16 @@ const Accounts = () => {
     if (!user) return;
 
     setCurrentUserId(user.id);
-
-    // Cek apakah user saat ini adalah super_admin
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "super_admin")
-      .maybeSingle();
-
-    const isSA = !!roleData;
-    setIsSuperAdmin(isSA);
-
-    // Fetch profiles berdasarkan role
-    await fetchProfiles(isSA, user.id);
+    await fetchProfiles();
   };
 
-  const fetchProfiles = async (isSA?: boolean, userId?: string) => {
+  const fetchProfiles = async () => {
     try {
-      const sa = isSA !== undefined ? isSA : isSuperAdmin;
-      const uid = userId || currentUserId;
-
-      let query = supabase
+      const { data } = await supabase
         .from("profiles")
         .select("*")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
-
-      // Admin biasa hanya bisa lihat data dirinya sendiri
-      if (!sa && uid) {
-        query = query.eq("user_id", uid);
-      }
-
-      const { data } = await query;
 
       if (data) {
         setProfiles(data);
@@ -284,12 +260,6 @@ const Accounts = () => {
     }
 
     try {
-      // Hapus role user terlebih dahulu
-      await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", selectedProfile.user_id);
-
       // Soft delete profile
       const { error } = await supabase
         .from("profiles")
@@ -332,135 +302,18 @@ const Accounts = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Pengaturan Akun</h1>
 
-          {/* Tombol Tambah Akun hanya muncul untuk Super Admin */}
-          {isSuperAdmin && (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => handleOpenDialog()} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Tambah Akun
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card">
-                <DialogHeader>
-                  <DialogTitle>
-                    {selectedProfile ? "Edit Akun" : "Tambah Akun Admin"}
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      name="username"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Masukkan username"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="npk">NPK *</Label>
-                    <Input
-                      id="npk"
-                      name="npk"
-                      value={formData.npk}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Masukkan NPK"
-                    />
-                  </div>
-
-                  {!selectedProfile && (
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="Masukkan email"
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">
-                      {selectedProfile ? "Password Baru (kosongkan jika tidak diubah)" : "Password"}
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        required={!selectedProfile}
-                        minLength={6}
-                        placeholder={selectedProfile ? "Masukkan password baru" : "Masukkan password"}
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                        tabIndex={-1}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">
-                      {selectedProfile ? "Konfirmasi Password Baru" : "Konfirmasi Password"}
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        required={!selectedProfile || !!formData.password}
-                        minLength={6}
-                        placeholder="Konfirmasi password"
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                        tabIndex={-1}
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <Button type="submit" disabled={isSaving}>
-                      {isSaving ? "Menyimpan..." : "Simpan"}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                      Batal
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-
-        {/* Dialog Edit untuk admin biasa (bukan SA) — tanpa DialogTrigger tombol Tambah */}
-        {!isSuperAdmin && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => handleOpenDialog()} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Tambah Akun
+              </Button>
+            </DialogTrigger>
             <DialogContent className="bg-card">
               <DialogHeader>
-                <DialogTitle>Edit Akun</DialogTitle>
+                <DialogTitle>
+                  {selectedProfile ? "Edit Akun" : "Tambah Akun Admin"}
+                </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="space-y-2">
@@ -476,18 +329,36 @@ const Accounts = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="npk">NPK</Label>
+                  <Label htmlFor="npk">NPK *</Label>
                   <Input
                     id="npk"
                     name="npk"
                     value={formData.npk}
                     onChange={handleInputChange}
+                    required
                     placeholder="Masukkan NPK"
                   />
                 </div>
 
+                {!selectedProfile && (
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Masukkan email"
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password Baru (kosongkan jika tidak diubah)</Label>
+                  <Label htmlFor="password">
+                    {selectedProfile ? "Password Baru (kosongkan jika tidak diubah)" : "Password"}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="password"
@@ -495,8 +366,9 @@ const Accounts = () => {
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleInputChange}
+                      required={!selectedProfile}
                       minLength={6}
-                      placeholder="Masukkan password baru"
+                      placeholder={selectedProfile ? "Masukkan password baru" : "Masukkan password"}
                       className="pr-10"
                     />
                     <button
@@ -511,7 +383,9 @@ const Accounts = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Konfirmasi Password Baru</Label>
+                  <Label htmlFor="confirmPassword">
+                    {selectedProfile ? "Konfirmasi Password Baru" : "Konfirmasi Password"}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="confirmPassword"
@@ -519,7 +393,7 @@ const Accounts = () => {
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
-                      required={!!formData.password}
+                      required={!selectedProfile || !!formData.password}
                       minLength={6}
                       placeholder="Konfirmasi password"
                       className="pr-10"
@@ -546,7 +420,7 @@ const Accounts = () => {
               </form>
             </DialogContent>
           </Dialog>
-        )}
+        </div>
 
         <Card className="shadow-card">
           <CardHeader>
@@ -586,20 +460,16 @@ const Accounts = () => {
                         <TableCell>{formatDate(profile.created_at)}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex justify-center gap-2">
-                            {/* Edit: SA bisa edit semua, admin biasa hanya bisa edit dirinya */}
-                            {(isSuperAdmin || profile.user_id === currentUserId) && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenDialog(profile)}
-                                className="gap-1"
-                              >
-                                <Edit className="h-4 w-4" />
-                                Edit
-                              </Button>
-                            )}
-                            {/* Delete: hanya SA, dan tidak bisa hapus diri sendiri */}
-                            {isSuperAdmin && profile.user_id !== currentUserId && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenDialog(profile)}
+                              className="gap-1"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit
+                            </Button>
+                            {profile.user_id !== currentUserId && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -645,18 +515,16 @@ const Accounts = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      {(isSuperAdmin || profile.user_id === currentUserId) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenDialog(profile)}
-                          className="flex-1 gap-1"
-                        >
-                          <Edit className="h-4 w-4" />
-                          Edit
-                        </Button>
-                      )}
-                      {isSuperAdmin && profile.user_id !== currentUserId && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenDialog(profile)}
+                        className="flex-1 gap-1"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit
+                      </Button>
+                      {profile.user_id !== currentUserId && (
                         <Button
                           variant="outline"
                           size="sm"

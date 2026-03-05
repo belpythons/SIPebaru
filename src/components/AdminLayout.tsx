@@ -19,24 +19,21 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-export type UserRole = "super_admin" | "admin" | "viewer" | null;
-
-// Definisi menu item dengan akses per role
+// Definisi menu item — semua menu tersedia untuk semua admin
 interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   path: string;
-  roles: UserRole[];
 }
 
 const allMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/admin", roles: ["super_admin", "admin", "viewer"] },
-  { icon: FileText, label: "Data Pengaduan", path: "/admin/complaints", roles: ["super_admin", "admin"] },
-  { icon: Building2, label: "Unit Kerja", path: "/admin/departments", roles: ["super_admin", "admin"] },
-  { icon: BarChart3, label: "Laporan", path: "/admin/reports", roles: ["super_admin", "admin", "viewer"] },
-  { icon: Users, label: "Manajemen Akun", path: "/admin/accounts", roles: ["super_admin", "admin"] },
-  { icon: Upload, label: "Import Data", path: "/admin/import", roles: ["super_admin"] },
-  { icon: ScrollText, label: "Log Aktivitas", path: "/admin/activity-logs", roles: ["super_admin"] },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+  { icon: FileText, label: "Data Pengaduan", path: "/admin/complaints" },
+  { icon: Building2, label: "Unit Kerja", path: "/admin/departments" },
+  { icon: BarChart3, label: "Laporan", path: "/admin/reports" },
+  { icon: Users, label: "Manajemen Akun", path: "/admin/accounts" },
+  { icon: Upload, label: "Import Data", path: "/admin/import" },
+  { icon: ScrollText, label: "Log Aktivitas", path: "/admin/activity-logs" },
 ];
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
@@ -44,61 +41,22 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>(null);
 
   useEffect(() => {
-    const checkAuthAndRole = async () => {
+    const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/login");
         return;
       }
-
-      // Ambil role user saat ini (prioritas: super_admin > admin > viewer)
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .in("role", ["admin", "super_admin", "viewer"]);
-
-      if (!roles || roles.length === 0) {
-        await supabase.auth.signOut();
-        navigate("/login");
-        return;
-      }
-
-      // Tentukan role tertinggi
-      const roleValues = roles.map((r) => r.role);
-      if (roleValues.includes("super_admin")) {
-        setUserRole("super_admin");
-      } else if (roleValues.includes("admin")) {
-        setUserRole("admin");
-      } else if (roleValues.includes("viewer")) {
-        setUserRole("viewer");
-      } else {
-        await supabase.auth.signOut();
-        navigate("/login");
-      }
     };
 
-    checkAuthAndRole();
+    checkAuth();
   }, [navigate]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
-  };
-
-  // Filter menu berdasarkan role
-  const visibleMenuItems = allMenuItems.filter(
-    (item) => userRole && item.roles.includes(userRole)
-  );
-
-  // Label role untuk ditampilkan
-  const roleLabelMap: Record<string, string> = {
-    super_admin: "Super Admin",
-    admin: "Admin",
-    viewer: "Viewer",
   };
 
   return (
@@ -128,9 +86,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 {isSidebarOpen && (
                   <div className="overflow-hidden">
                     <h1 className="text-lg font-bold text-sidebar-foreground">SIPebaru</h1>
-                    <p className="text-xs text-sidebar-foreground/70">
-                      {userRole ? roleLabelMap[userRole] || "Panel Admin" : "Panel Admin"}
-                    </p>
+                    <p className="text-xs text-sidebar-foreground/70">Panel Admin</p>
                   </div>
                 )}
               </div>
@@ -138,7 +94,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
             {/* Navigasi */}
             <nav className="flex-1 p-4 space-y-2">
-              {visibleMenuItems.map((item) => {
+              {allMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <Link
@@ -201,7 +157,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-40 bg-sidebar pt-16 md:hidden">
             <nav className="p-4 space-y-2">
-              {visibleMenuItems.map((item) => {
+              {allMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <Link
